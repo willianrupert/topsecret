@@ -1,147 +1,371 @@
 import streamlit as st
 import pandas as pd
 from joblib import load
-import matplotlib.pyplot as plt
-import seaborn as sns
-import base64 # Usado para criar o link de download
+import plotly.express as px
+import numpy as np
+import time
+import os
 
-# Configuração da página - Adicionando um menu sobre o projeto
+# --- Configuração da Página ---
 st.set_page_config(
-    page_title="Caçador de Exoplanetas AI",
-    page_icon="🌠",
+    page_title="ExoplanetLIA",
+    page_icon="🔭",
     layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.spaceappschallenge.org/',
-        'Report a bug': "https://github.com/WillGuedes01/NASA-Exoplanets",
-        'About': "# Caçador de Exoplanetas AI. Desenvolvido para o NASA Space Apps Challenge!"
-    }
+    initial_sidebar_state="expanded"
 )
 
-# --- Funções de Carregamento (com cache para performance) ---
+# --- Dicionário de Idiomas (i18n) ---
+LANGUAGES = {
+    "pt": {
+        "animation_overlay_text": "Encontre exoplanetas conosco",
+        "page_title": "Caçador de Exoplanetas LIA",
+        "sidebar_title": "Exoplanet Hunter AI",
+        "sidebar_version": "Versão 2.0",
+        "sidebar_nav": "Navegação:",
+        "nav_about": "Sobre o Projeto",
+        "nav_classify": "Classificar Candidato",
+        "nav_performance": "Performance do Modelo",
+        "model_error": "Arquivos de modelo/scaler não encontrados!",
+        "model_success": "Modelo de IA Carregado!",
+        "project_info": "Projeto para o NASA Space Apps Challenge.",
+        
+        "about_title": "A World Away: Caçando Exoplanetas com Inteligência Artificial",
+        "about_challenge_header": "O Desafio",
+        "about_challenge_text": """
+        O universo está repleto de planetas fora do nosso sistema solar — os exoplanetas. 
+        Missões da NASA como Kepler e TESS coletam uma quantidade imensa de dados.
+        No entanto, identificar a minúscula queda de brilho causada por um planeta em trânsito é como encontrar uma agulha num palheiro cósmico. 
+        O nosso desafio é construir uma ferramenta de IA para automatizar e acelerar essa incrível descoberta.
+        """,
+        "about_solution_header": "Nossa Solução",
+        "about_solution_text": """
+        Desenvolvemos uma aplicação web interativa que utiliza um modelo de Machine Learning para analisar dados de curvas de luz, 
+        classificando candidatos como 'Possível Exoplaneta' ou 'Falso Positivo'. Esta ferramenta permite que qualquer pessoa 
+        participe da busca por novos mundos.
+        """,
+        "about_how_header": "Como Funciona?",
+        "about_how_text": """
+        Utilizamos o **método de trânsito**. Quando um planeta passa na frente de sua estrela, 
+        ele bloqueia uma pequena fração da luz, gerando um gráfico conhecido como **Curva de Luz**. Nosso modelo de IA é especialista em analisar 
+        a forma, profundidade e periodicidade dessas quedas de brilho.
+        """,
+
+        "classify_title": "🔬 Faça uma Nova Classificação",
+        "classify_info": "Envie um arquivo `.csv` com dados de uma curva de luz e deixe nossa IA fazer a análise.",
+        "classify_expander_title": "❓ Precisa de ajuda com o formato dos dados?",
+        "classify_expander_text": "O arquivo CSV deve conter colunas com os dados de fluxo (brilho) da estrela, tipicamente nomeadas como 'FLUX.1', 'FLUX.2', etc.",
+        "classify_download_button": "Baixar CSV de Exemplo",
+        "classify_model_warning": "O modelo de IA ou o scaler não estão carregados. Não é possível fazer classificações.",
+        "classify_uploader_label": "Escolha o arquivo CSV",
+        "classify_file_success": "Arquivo carregado com sucesso!",
+        "classify_button": "✨ Iniciar Classificação!",
+        "classify_spinner": "Analisando os confins do universo com a IA...",
+        "classify_results_header": "Resultados da Análise",
+        "classify_verdict_subheader": "Veredito do Modelo:",
+        "classify_planet_candidate": "✔️ **Possível Exoplaneta**",
+        "classify_false_positive": "❌ **Falso Positivo**",
+        "classify_success_fallback": "✨ Resultado: candidato detectado — verifique com follow-up científico.",
+        "classify_fail_fallback": "🔎 Resultado: provável falso positivo — pode ser ruído ou variabilidade estelar.",
+        "classify_confidence_metric": "Confiança do Modelo",
+        "classify_expander_meaning_title": "O que isso significa?",
+        "classify_expander_meaning_text": "Nosso modelo analisou os padrões na variação de brilho da estrela e calculou a probabilidade deste padrão ser causado por um planeta em trânsito.",
+        "classify_chart_caption": "Gráfico da Curva de Luz: Variação do brilho da estrela ao longo do tempo.",
+        "classify_error": "Ocorreu um erro ao processar o arquivo:",
+
+        "performance_title": "📊 Performance do Modelo de IA",
+        "performance_intro": "A transparência é fundamental. Aqui mostramos como nosso modelo se saiu em dados que ele nunca havia visto antes.",
+        "performance_tab_metrics": "**Métricas Principais**",
+        "performance_tab_matrix": "**Matriz de Confusão**",
+        "performance_tab_training": "**Sobre o Treinamento**",
+        "metric_accuracy": "Acurácia Geral",
+        "metric_precision": "Precisão",
+        "metric_recall": "Recall",
+        "metrics_desc": """
+            - **Acurácia:** A porcentagem de classificações corretas no geral.
+            - **Precisão:** De todas as vezes que o modelo disse "é um exoplaneta", quantas vezes ele estava certo? Essencial para evitar falsos alarmes.
+            - **Recall:** De todos os exoplanetas reais, quantos o nosso modelo conseguiu encontrar? Vital para não perdermos descobertas.
+            """,
+        "matrix_header": "Análise Visual da Performance",
+        "matrix_text": "A matriz de confusão é a melhor ferramenta para visualizar os acertos e erros do modelo.",
+        "matrix_not_found": "Arquivo 'matriz_confusao.png' não encontrado.",
+        "matrix_expander_title": "Como ler este gráfico?",
+        "matrix_expander_text": """
+            - **Verdadeiro Positivo:** O modelo acertou "Planeta". **(Sucesso!)**
+            - **Verdadeiro Negativo:** O modelo acertou "Não é Planeta". **(Sucesso!)**
+            - **Falso Positivo:** O modelo errou, dizendo "Planeta".
+            - **Falso Negativo:** O modelo errou, dizendo "Não é Planeta". (O pior erro!)
+            """,
+        "training_header": "Detalhes do Treinamento do Modelo",
+        "training_text": """
+            - **Dataset Utilizado:** TESS Objects of Interest (TOI) - Placeholder
+            - **Algoritmo:** Random Forest Classifier - Placeholder
+            - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
+            """
+    },
+    "en": {
+        "animation_overlay_text": "Find exoplanets with us",
+        "page_title": "Exoplanet Hunter LIA",
+        "sidebar_title": "Exoplanet Hunter AI",
+        "sidebar_version": "Version 2.0",
+        "sidebar_nav": "Navigation:",
+        "nav_about": "About the Project",
+        "nav_classify": "Classify Candidate",
+        "nav_performance": "Model Performance",
+        "model_error": "Model/scaler files not found!",
+        "model_success": "AI Model Loaded!",
+        "project_info": "Project for the NASA Space Apps Challenge.",
+        "about_title": "A World Away: Hunting for Exoplanets with AI",
+        "about_challenge_header": "The Challenge",
+        "about_challenge_text": """
+        The universe is filled with exoplanets. NASA missions like Kepler and TESS collect vast amounts of data. 
+        However, identifying the tiny dip in brightness from a transit is like finding a needle in a cosmic haystack. 
+        Our challenge is to build an AI tool to automate and accelerate this discovery.
+        """,
+        "about_solution_header": "Our Solution",
+        "about_solution_text": """
+        We developed an interactive web app that uses Machine Learning to analyze light curve data, classifying candidates as 
+        'Potential Exoplanet' or 'False Positive'. This tool allows anyone to join the search for new worlds.
+        """,
+        "about_how_header": "How It Works",
+        "about_how_text": """
+        We use the **transit method**. When a planet passes in front of its star, it blocks a fraction of the starlight, creating a **Light Curve**. 
+        Our AI model is an expert in analyzing the shape, depth, and periodicity of these dips.
+        """,
+        "classify_title": "🔬 Make a New Classification",
+        "classify_info": "Upload a `.csv` file with light curve data and let our AI do the analysis.",
+        "classify_expander_title": "❓ Need help with the data format?",
+        "classify_expander_text": "The CSV file must contain flux data columns, typically named 'FLUX.1', 'FLUX.2', etc.",
+        "classify_download_button": "Download Sample CSV",
+        "classify_model_warning": "AI model or scaler is not loaded. Classification is not possible.",
+        "classify_uploader_label": "Choose the CSV file",
+        "classify_file_success": "File uploaded successfully!",
+        "classify_button": "✨ Start Classification!",
+        "classify_spinner": "Analyzing the cosmos with AI...",
+        "classify_results_header": "Analysis Results",
+        "classify_verdict_subheader": "Model's Verdict:",
+        "classify_planet_candidate": "✔️ **Potential Exoplanet**",
+        "classify_false_positive": "❌ **False Positive**",
+        "classify_success_fallback": "✨ Result: Candidate detected — verify with scientific follow-up.",
+        "classify_fail_fallback": "🔎 Result: Likely a false positive — could be stellar variability or noise.",
+        "classify_confidence_metric": "Model Confidence",
+        "classify_expander_meaning_title": "What does this mean?",
+        "classify_expander_meaning_text": "Our model analyzed the brightness patterns and calculated the probability of this pattern being caused by a transiting planet.",
+        "classify_chart_caption": "Light Curve Graph: Star's brightness variation over time.",
+        "classify_error": "An error occurred while processing the file:",
+        "performance_title": "📊 AI Model Performance",
+        "performance_intro": "Transparency is key. Here we show how our model performed on data it had never seen before.",
+        "performance_tab_metrics": "**Key Metrics**",
+        "performance_tab_matrix": "**Confusion Matrix**",
+        "performance_tab_training": "**About the Training**",
+        "metric_accuracy": "Overall Accuracy",
+        "metric_precision": "Precision",
+        "metric_recall": "Recall",
+        "metrics_desc": """
+            - **Accuracy:** The overall percentage of correct classifications.
+            - **Precision:** Of all "exoplanet" predictions, how many were correct? Crucial to avoid false alarms.
+            - **Recall:** Of all actual exoplanets, how many did our model find? Vital for not missing discoveries.
+            """,
+        "matrix_header": "Visual Performance Analysis",
+        "matrix_text": "The confusion matrix is the best tool to visualize the model's hits and misses.",
+        "matrix_not_found": "'matriz_confusao.png' file not found.",
+        "matrix_expander_title": "How to read this chart?",
+        "matrix_expander_text": """
+            - **True Positive:** Correctly guessed "Planet". **(Success!)**
+            - **True Negative:** Correctly guessed "Not a Planet". **(Success!)**
+            - **False Positive:** Incorrectly guessed "Planet".
+            - **False Negative:** Incorrectly guessed "Not a Planet". (The worst error!)
+            """,
+        "training_header": "Model Training Details",
+        "training_text": """
+            - **Dataset Used:** TESS Objects of Interest (TOI) - Placeholder
+            - **Algorithm:** Random Forest Classifier - Placeholder
+            - **Data Split:** 80% for training, 20% for testing.
+            """
+    }
+}
+
+# --- Estado da Sessão ---
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'pt'
+if 'page' not in st.session_state:
+    st.session_state.page = ("nav_about")
+
+def t(key):
+    """Função para buscar texto no dicionário de idiomas."""
+    return LANGUAGES[st.session_state.lang].get(key, key)
+
+# --- CSS Customizado ---
+CSS = """
+<style>
+    /* Headers com cor de destaque */
+    h1, h2, h3 {
+        color: #58a6ff; /* Azul NASA */
+    }
+
+    /* Botão primário com gradiente animado */
+    .stButton>button[kind="primary"] {
+        background: linear-gradient(90deg, #238636, #2ea043, #58a6ff);
+        background-size: 200% 200%;
+        color: white;
+        border: none;
+        animation: gradientShift 6s ease infinite;
+    }
+    .stButton>button[kind="primary"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(46, 160, 67, 0.3);
+    }
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+</style>
+"""
+st.markdown(CSS, unsafe_allow_html=True)
+
+# --- Animação de Estrelas com Texto Sobreposto ---
+def get_animation_html(overlay_text):
+    return f"""
+<div style="width: 100%; height: 320px; overflow: hidden; position: relative; border-radius: 10px; background-color: #0d1117;">
+    <canvas id="starfield" style="position: absolute; top: 0; left: 0; width:100%; height:100%;"></canvas>
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+        <h1 style="color: #fff; font-size: clamp(2rem, 5vw, 3.5rem); text-shadow: 0 0 8px #58a6ff, 0 0 15px #58a6ff, 0 0 25px #58a6ff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 0 20px;">
+            {overlay_text}
+        </h1>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById('starfield');
+    if (canvas) {{
+        const container = canvas.parentElement;
+        function resizeCanvas() {{
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+        }}
+        resizeCanvas();
+        const ctx = canvas.getContext('2d');
+        const stars = [];
+        const numStars = 400;
+        function random(min, max){{ return Math.random()*(max-min)+min; }}
+        function createStars(){{
+            for(let i=0;i<numStars;i++){{
+                stars.push({{x:random(0,canvas.width), y:random(0,canvas.height), size:random(0.5,2.5), speed:random(0.05,0.4)}});
+            }}
+        }}
+        function draw(){{
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#c9d1d9';
+            for(let s of stars){{
+                ctx.beginPath();
+                ctx.arc(s.x,s.y,s.size/2,0,Math.PI*2);
+                ctx.fill();
+            }}
+        }}
+        function update(){{
+            for(let s of stars){{
+                s.y += s.speed;
+                if(s.y > canvas.height){{ s.y = 0; s.x = Math.random()*canvas.width; }}
+            }}
+        }}
+        function loop(){{ draw(); update(); requestAnimationFrame(loop); }}
+        createStars(); loop();
+        window.addEventListener('resize', function(){{ resizeCanvas(); stars.length=0; createStars(); }});
+    }}
+</script>
+"""
+
+# --- Funções de Carregamento ---
 @st.cache_resource
 def carregar_modelo():
-    try:
+    if os.path.exists('modelo_exoplaneta.joblib'):
         return load('modelo_exoplaneta.joblib')
-    except FileNotFoundError:
-        return None
+    return None
 
 @st.cache_resource
 def carregar_scaler():
-    try:
+    if os.path.exists('scaler.joblib'):
         return load('scaler.joblib')
-    except FileNotFoundError:
-        return None
+    return None
 
 modelo = carregar_modelo()
 scaler = carregar_scaler()
 
-# --- Barra Lateral (Sidebar com design melhorado) ---
+# --- Layout Superior (Título e Seletor de Idioma) ---
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    st.title(f'🔭 {t("page_title")}')
+with col2:
+    lang_options = {"🇧🇷 Português": "pt", "🇺🇸 English": "en"}
+    lang_labels = list(lang_options.keys())
+    current_lang_index = lang_labels.index("🇺🇸 English") if st.session_state.lang == 'en' else lang_labels.index("🇧🇷 Português")
+    
+    selected_lang_label = st.selectbox("Idioma/Language", lang_labels, index=current_lang_index, label_visibility="collapsed")
+    st.session_state.lang = lang_options[selected_lang_label]
+
+# --- Barra Lateral ---
 with st.sidebar:
-    st.title("🛰️ Caçador de Exoplanetas AI")
-    st.markdown("---")
-    
-    # Lógica de status do modelo mais clara para o usuário
-    if modelo is not None and scaler is not None:
-        st.success("✅ Modelo de IA pronto para análise!")
+    if os.path.exists('nasa_logo.png'):
+        st.image("nasa_logo.png", use_container_width=True)
     else:
-        st.error("❌ Modelo não encontrado!")
-        st.warning("Verifique se os arquivos 'modelo_exoplaneta.joblib' e 'scaler.joblib' estão na pasta do projeto.")
+        st.warning("Logo 'nasa_logo.png' não encontrada.")
     
-    st.markdown("---")
+    st.title(t("sidebar_title"))
+    st.markdown(f"**{t('sidebar_version')}**")
     
-    st.subheader("Navegação Principal")
-    page = st.radio(
-        "Escolha uma página:", 
-        ["Sobre o Projeto", "Classificar Novo Candidato", "Performance do Modelo"],
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("---")
-    st.info("Desenvolvido para o NASA Space Apps Challenge.")
-
-# ==============================================================================
-# --- PÁGINA 1: SOBRE O PROJETO ---
-# ==============================================================================
-if page == "Sobre o Projeto":
-    st.title("A World Away: Caçando Exoplanetas com Inteligência Artificial")
-    st.markdown("### Uma ferramenta para acelerar a descoberta de novos mundos.")
-    
-    st.image("https://placehold.co/1200x400/000033/FFFFFF?text=NASA+Space+Apps+Challenge", caption="Missões espaciais nos fornecem os dados para explorar o cosmos.")
-    
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.header("🚀 O Desafio")
-        st.write(
-            "Milhares de exoplanetas já foram descobertos, mas acredita-se que existam trilhões em nossa galáxia. "
-            "As missões da NASA, como Kepler e TESS, geram petabytes de dados, tornando a análise manual impraticável. "
-            "O desafio é criar uma solução que possa analisar esses vastos conjuntos de dados de forma rápida e precisa."
-        )
-
-    with col2:
-        st.header("💡 Nossa Solução")
-        st.write(
-            "Nosso projeto utiliza um modelo de Machine Learning treinado para reconhecer as 'assinaturas' sutis que um exoplaneta "
-            "deixa nos dados de uma estrela. Esta aplicação web democratiza o acesso a essa tecnologia, permitindo que "
-            "qualquer pessoa participe da fronteira da exploração exoplanetária."
-        )
+    visible_options = [t("nav_about"), t("nav_classify"), t("nav_performance")]
+    st.session_state.page = st.radio(t("sidebar_nav"), visible_options, key="navigation_radio")
 
     st.divider()
 
-    st.header("⚙️ Como Funciona?")
-    st.image("https://placehold.co/1000x250/1C1C1C/FFFFFF?text=Dados+Crus+->+Pré-Processamento+->+Modelo+IA+->+Classificação", caption="Fluxo de trabalho do nosso sistema de classificação.")
+    if modelo is None or scaler is None:
+        st.error(t("model_error"))
+    else:
+        st.success(t("model_success"))
 
-    st.header("🛠️ Tecnologias Utilizadas")
-    st.write(
-        "- **Python:** Linguagem principal para ciência de dados e backend."
-        "- **Streamlit:** Framework para a construção da interface web interativa."
-        "- **Scikit-learn:** Para o treinamento e avaliação do nosso modelo de classificação."
-        "- **Pandas:** Para manipulação e pré-processamento dos dados."
-        "- **GitHub:** Para controle de versão e colaboração da equipe."
-    )
+    st.info(t("project_info"))
 
-# ==============================================================================
-# --- PÁGINA 2: CLASSIFICAR NOVO CANDIDATO ---
-# ==============================================================================
-elif page == "Classificar Novo Candidato":
-    st.title("🔬 Faça uma Nova Classificação")
-    st.markdown("Envie um arquivo `.csv` com dados de uma curva de luz e deixe nossa IA fazer a análise.")
+# --- Roteamento de Páginas ---
 
-    # Bloco de ajuda para o usuário
-    with st.expander("❓ Precisa de ajuda com o formato dos dados?"):
-        st.write(
-            "O arquivo CSV deve conter colunas com os dados de fluxo (brilho) da estrela. "
-            "Essas colunas são tipicamente nomeadas como 'FLUX.1', 'FLUX.2', etc. "
-            "O nosso modelo foi treinado com um número específico de features, então garanta que seu arquivo tenha a estrutura correta."
-        )
-        # Criando um dataframe de exemplo para download
-        sample_df = pd.DataFrame([[f"{i*0.98}" for i in range(50)]], columns=[f'FLUX.{i+1}' for i in range(50)])
+# Sobre o Projeto
+if st.session_state.page == t("nav_about"):
+    st.components.v1.html(get_animation_html(t("animation_overlay_text")), height=320)
+    st.header(t("about_challenge_header"))
+    st.write(t("about_challenge_text"))
+    st.header(t("about_solution_header"))
+    st.write(t("about_solution_text"))
+    st.header(t("about_how_header"))
+    st.write(t("about_how_text"))
+
+# Classificar Candidato
+elif st.session_state.page == t("nav_classify"):
+    st.info(t("classify_info"))
+
+    with st.expander(t("classify_expander_title")):
+        st.write(t("classify_expander_text"))
+        sample_df = pd.DataFrame([[f"{1.0 - (i % 20) * 0.001}" for i in range(50)]], columns=[f'FLUX.{i+1}' for i in range(50)])
         csv = sample_df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="Baixar CSV de Exemplo",
+            label=t("classify_download_button"),
             data=csv,
             file_name='exemplo_curva_de_luz.csv',
             mime='text/csv',
         )
 
     if modelo is None or scaler is None:
-        st.warning("O modelo de IA ou o scaler não estão carregados. Não é possível fazer classificações.")
+        st.warning(t("classify_model_warning"))
     else:
-        uploaded_file = st.file_uploader("Escolha o arquivo CSV", type="csv", label_visibility="collapsed")
+        uploaded_file = st.file_uploader(t("classify_uploader_label"), type="csv", label_visibility="collapsed")
 
         if uploaded_file is not None:
             try:
                 dados_usuario = pd.read_csv(uploaded_file)
-                st.success("Arquivo carregado com sucesso!")
+                st.success(t("classify_file_success"))
                 
-                if st.button("✨ Iniciar Classificação!", type="primary"):
-                    with st.spinner('Analisando os confins do universo com a IA...'):
+                if st.button(t("classify_button"), type="primary", use_container_width=True):
+                    with st.spinner(t("classify_spinner")):
+                        colunas_do_modelo = scaler.get_feature_names_out()
+                        dados_processados = scaler.transform(dados_usuario[colunas_do_modelo])
                         
-                        # --- LÓGICA DE PREDIÇÃO REAL ---
-                        dados_processados = dados_usuario # Substituir pela lógica real com o scaler
                         predicao = modelo.predict(dados_processados)
                         probabilidade = modelo.predict_proba(dados_processados)
                         
@@ -149,88 +373,59 @@ elif page == "Classificar Novo Candidato":
                         confianca = probabilidade[0].max() * 100
 
                         st.divider()
-                        st.subheader("Resultados da Análise")
+                        st.subheader(t("classify_results_header"))
                         
                         col1, col2 = st.columns([1, 2])
 
                         with col1:
+                            st.subheader(t("classify_verdict_subheader"))
                             if resultado == 1:
-                                st.success(f"✔️ **Possível Exoplaneta**")
+                                st.success(t("classify_planet_candidate"))
+                                if os.path.exists('planet_success.gif'):
+                                    st.image('planet_success.gif')
+                                else:
+                                    st.info(t("classify_success_fallback"))
                             else:
-                                st.error(f"❌ **Falso Positivo**")
+                                st.error(t("classify_false_positive"))
+                                if os.path.exists('false_positive.gif'):
+                                    st.image('false_positive.gif')
+                                else:
+                                    st.info(t("classify_fail_fallback"))
                             
-                            st.metric(label="Confiança do Modelo", value=f"{confianca:.2f}%")
-
-                            with st.expander("O que isso significa?"):
-                                st.write("Nosso modelo analisou os padrões na variação de brilho da estrela e, com base no seu treinamento, calculou a probabilidade deste padrão ser causado por um planeta em trânsito.")
+                            st.metric(label=t("classify_confidence_metric"), value=f"{confianca:.2f}%")
 
                         with col2:
                             flux_cols = [col for col in dados_usuario.columns if 'FLUX' in col]
                             if flux_cols:
-                                st.line_chart(dados_usuario[flux_cols].iloc[0].T)
-                                st.caption("Gráfico da Curva de Luz: Variação do brilho da estrela ao longo do tempo. Quedas periódicas podem indicar um exoplaneta.")
+                                fig = px.line(y=dados_usuario[flux_cols].iloc[0].T, labels={'y': 'Brilho Normalizado', 'x': 'Tempo (Observação)'})
+                                fig.update_layout(template="plotly_dark", margin=dict(l=10, r=10, t=30, b=10))
+                                st.plotly_chart(fig, use_container_width=True)
+                                st.caption(t("classify_chart_caption"))
 
             except Exception as e:
-                st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+                st.error(f"{t('classify_error')} {e}")
 
-# ==============================================================================
-# --- PÁGINA 3: PERFORMANCE DO MODELO ---
-# ==============================================================================
-elif page == "Performance do Modelo":
-    st.title("📊 Performance do Modelo de IA")
-    st.markdown("A transparência é fundamental. Aqui mostramos como nosso modelo se saiu em um conjunto de dados que ele nunca havia visto antes.")
+# Performance do Modelo
+elif st.session_state.page == t("nav_performance"):
+    st.markdown(t("performance_intro"))
     
-    # Usando abas (tabs) para organizar melhor a informação
-    tab1, tab2, tab3 = st.tabs(["**Métricas Principais**", "**Matriz de Confusão**", "**Sobre o Treinamento**"])
+    tab1, tab2, tab3 = st.tabs([t("performance_tab_metrics"), t("performance_tab_matrix"), t("performance_tab_training")])
 
     with tab1:
-        st.header("Métricas de Classificação")
-        
-        # --- ATUALIZAR COM VALORES REAIS ---
         col1, col2, col3 = st.columns(3)
-        col1.metric("Acurácia Geral", "98.2%", "±0.4%")
-        col2.metric("Precisão (Exoplanetas)", "97.1%", "Minimiza falsos positivos")
-        col3.metric("Recall (Exoplanetas)", "98.5%", "Encontra a maioria dos positivos reais")
-        
-        st.divider()
-        st.subheader("O que essas métricas significam?")
-        
-        st.markdown(
-            """
-            - **Acurácia:** A porcentagem de classificações corretas no geral. Simples, mas pode ser enganosa se os dados forem desbalanceados.
-            - **Precisão:** De todas as vezes que o modelo disse "é um exoplaneta", quantas vezes ele estava certo? Uma alta precisão é crucial para evitar que os cientistas percam tempo analisando falsos alarmes.
-            - **Recall (Sensibilidade):** De todos os exoplanetas reais no conjunto de dados, quantos o nosso modelo conseguiu encontrar? Um alto recall é vital para não perdermos descobertas potenciais.
-            """
-        )
+        col1.metric(t("metric_accuracy"), "98.2%", "±0.4%")
+        col2.metric(t("metric_precision"), "97.1%", "Minimiza falsos positivos")
+        col3.metric(t("metric_recall"), "98.5%", "Encontra a maioria dos positivos reais")
+        st.markdown(t("metrics_desc"))
 
     with tab2:
-        st.header("Análise Visual da Performance")
-        st.write("A matriz de confusão é a melhor ferramenta para visualizar os acertos e erros do modelo.")
-        
-        # --- ATUALIZAR COM IMAGEM REAL ---
-        try:
-            st.image('matriz_confusao.png', caption="Desempenho detalhado do modelo no conjunto de teste.")
-        except FileNotFoundError:
-            st.warning("Arquivo 'matriz_confusao.png' não encontrado.")
-
-        with st.expander("Como ler este gráfico?"):
-            st.markdown(
-                """
-                - **Verdadeiro Positivo (Canto Inferior Direito):** O modelo disse "Planeta" e era um planeta. **(Sucesso!)**
-                - **Verdadeiro Negativo (Canto Superior Esquerdo):** O modelo disse "Não é Planeta" e não era. **(Sucesso!)**
-                - **Falso Positivo (Canto Superior Direito):** O modelo disse "Planeta", mas não era. (Erro Tipo I)
-                - **Falso Negativo (Canto Inferior Esquerdo):** O modelo disse "Não é Planeta", mas era. (Erro Tipo II - o pior erro!)
-                """
-            )
+        if os.path.exists('matriz_confusao.png'):
+            st.image('matriz_confusao.png', caption=t("matrix_caption"), use_container_width=True)
+        else:
+            st.warning(t("matrix_not_found"))
+        with st.expander(t("matrix_expander_title")):
+            st.markdown(t("matrix_expander_text"))
 
     with tab3:
-        st.header("Detalhes do Treinamento do Modelo")
-        st.markdown(
-            """
-            - **Dataset Utilizado:** TESS Objects of Interest (TOI)
-            - **Algoritmo de Machine Learning:** Random Forest Classifier
-            - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
-            - **Validação:** As métricas exibidas foram calculadas exclusivamente no conjunto de teste de 20%, garantindo uma avaliação imparcial da capacidade de generalização do modelo.
-            """
-        )
+        st.markdown(t("training_text"))
 
