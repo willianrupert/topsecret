@@ -30,7 +30,6 @@ def load_and_prepare_koi_data():
         "koi_prad", "koi_insol"
     ]
 
-    # Keep only available features
     available_features = [f for f in features if f in koi.columns]
     print(f"Using {len(available_features)} features: {available_features}")
 
@@ -49,6 +48,8 @@ def train_random_forest(df, feature_cols):
 
     # === 4. Train/test split ===
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42, stratify=y)
+
+    X_train = X_train.fillna(X_train.mean())
 
     # === 5. Train a Random Forest model ===
     rf = RandomForestClassifier(
