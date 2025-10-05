@@ -25,9 +25,9 @@ def load_and_prepare_koi_data():
 
     # Select relevant numeric features
     features = [
-        "koi_period", "koi_duration", "koi_depth", "koi_impact", "koi_num_transits", "koi_max_mult_ev",
+        "koi_period", "koi_duration", "koi_depth", "koi_impact",
         "koi_steff", "koi_slogg", "koi_srad",
-        "koi_prad", "koi_dor", "koi_insol"
+        "koi_prad", "koi_insol"
     ]
 
     # Keep only available features

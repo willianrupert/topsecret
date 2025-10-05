@@ -40,7 +40,7 @@ def main():
             "nav_about": "Sobre o Projeto",
             "nav_classify": "Classificar Candidato",
             "nav_performance": "Performance do Modelo",
-            "model_error": "Arquivos do modelo não encontrados!",
+            "model_error": "Arquivos do modelo não encontrados! Por favor, execute o script de treinamento.",
             "model_success": "Modelo de IA Carregado!",
             "project_info": "Projeto para o NASA Space Apps Challenge.",
             "logo_not_found_warning": "Arquivo 'nasa_logo.png' não encontrado.",
@@ -62,13 +62,13 @@ def main():
             A partir de dados da missão Kepler (KOI), nosso modelo de IA (baseado em RandomForest) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
             Utilizamos a tecnologia **SHAP** para visualizar exatamente quais parâmetros mais influenciaram cada predição.
             """,
-
             "classify_title": "🔬 Classifique um Candidato a Exoplaneta",
             "classify_intro": "Escolha um método: envie um arquivo CSV ou insira os dados de um único candidato manualmente.",
             "upload_header": "Opção 1: Upload de Arquivo CSV",
             "manual_header": "Opção 2: Entrada Manual de Dados",
             "classify_expander_title": "❓ Precisa de ajuda com o formato do CSV?",
             "classify_expander_text": "O arquivo CSV deve conter as features que o modelo espera. O sistema tentará reconhecer nomes alternativos.",
+            "classify_uploader_label": "Selecione o arquivo CSV",
             "classify_download_button": "Baixar CSV de Exemplo",
             "classify_button": "✨ Classificar!",
             "classify_spinner": "Analisando os confins do universo com a IA...",
@@ -102,7 +102,7 @@ def main():
             "training_text": """
                 - **Dataset Utilizado:** Kepler Objects of Interest (KOI)
                 - **Algoritmo:** RandomForestClassifier
-                - **Features:** 10 características principais do trânsito e da estrela hospedeira.
+                - **Features:** As features utilizadas são carregadas dinamicamente a partir do modelo treinado.
                 - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
                 """
         },
@@ -115,7 +115,7 @@ def main():
             "nav_about": "About the Project",
             "nav_classify": "Classify Candidate",
             "nav_performance": "Model Performance",
-            "model_error": "Model files not found!",
+            "model_error": "Model files not found! Please run the training script.",
             "model_success": "AI Model Loaded!",
             "project_info": "Project for the NASA Space Apps Challenge.",
             "logo_not_found_warning": "'nasa_logo.png' file not found.",
@@ -132,6 +132,7 @@ def main():
             "manual_header": "Option 2: Manual Data Entry",
             "classify_expander_title": "❓ Need help with the CSV format?",
             "classify_expander_text": "The CSV must contain the features the model expects. The system will try to recognize alternative names.",
+            "classify_uploader_label": "Select CSV file",
             "classify_download_button": "Download Sample CSV",
             "classify_button": "✨ Classify!",
             "classify_spinner": "Analyzing the cosmos with AI...",
@@ -165,7 +166,7 @@ def main():
             "training_text": """
                 - **Dataset Used:** Kepler Objects of Interest (KOI)
                 - **Algorithm:** RandomForestClassifier
-                - **Features:** 10 key characteristics of the transit and host star.
+                - **Features:** The features used are dynamically loaded from the trained model.
                 - **Data Split:** 80% for training, 20% for testing.
                 """
         }
@@ -174,24 +175,41 @@ def main():
     def t(key):
         return LANGUAGES[st.session_state.lang].get(key, key)
 
+    # --- CORREÇÃO APLICADA AQUI ---
+    # Este dicionário agora contém apenas os aliases para as colunas
+    # que o modelo REALMENTE utiliza. As colunas que causavam o erro foram removidas.
     COLUMN_ALIASES = {
-        'koi_period': ['period'], 'koi_duration': ['duration'], 'koi_depth': ['depth'],
-        'koi_prad': ['prad'], 'koi_insol': ['insol'], 'koi_model_snr': ['model_snr'],
-        'koi_steff': ['steff'], 'koi_slogg': ['slogg'], 'koi_srad': ['srad'],
-        'koi_impact': ['impact']
+        'koi_period': ['period'], 
+        'koi_duration': ['duration'], 
+        'koi_depth': ['depth'],
+        'koi_prad': ['prad'], 
+        'koi_insol': ['insol'], 
+        'koi_model_snr': ['model_snr'],
+        'koi_steff': ['steff', 'tce_steff'], 
+        'koi_slogg': ['slogg', 'tce_slogg'], 
+        'koi_srad': ['srad', 'tce_srad'],
+        'koi_impact': ['impact', 'tce_impact']
+        # As colunas 'koi_num_transits', 'koi_max_mult_ev', 'koi_dor' foram removidas
+        # pois o modelo existente não foi treinado com elas.
     }
 
-
-    def rename_uploaded_columns(df):
+    def rename_uploaded_columns(df, expected_features):
         rename_map = {}
         df_columns_lower = [str(col).lower() for col in df.columns]
-        for standard_name, alias_list in COLUMN_ALIASES.items():
-            for alias in alias_list:
+        
+        # Itera apenas sobre as features que o modelo realmente espera
+        for standard_name in expected_features:
+            # Pega a lista de aliases para a feature atual, ou uma lista vazia se não houver
+            alias_list = COLUMN_ALIASES.get(standard_name, [])
+            full_alias_list = alias_list + [standard_name] # Inclui o nome padrão na busca
+            
+            for alias in full_alias_list:
                 if alias.lower() in df_columns_lower:
                     original_col_index = df_columns_lower.index(alias.lower())
                     original_col_name = df.columns[original_col_index]
                     rename_map[original_col_name] = standard_name
-                    break
+                    break # Para quando encontrar o primeiro alias correspondente
+                    
         df.rename(columns=rename_map, inplace=True)
         return df
 
@@ -200,9 +218,10 @@ def main():
         try:
             model = joblib.load('random_forest_model.joblib')
             scaler = joblib.load('scaler_rf.joblib')
-            explainer = shap.TreeExplainer(model)
             with open('feature_columns_rf.pkl', 'rb') as f:
                 feature_columns = pickle.load(f)
+            # O explainer é criado aqui para garantir que ele corresponda ao modelo carregado
+            explainer = shap.TreeExplainer(model)
             return model, scaler, explainer, feature_columns
         except FileNotFoundError:
             return None, None, None, None
@@ -243,49 +262,63 @@ def main():
     elif st.session_state.page == "nav_classify":
         st.header(t("classify_title"))
         st.write(t("classify_intro"))
-        if model is None or scaler is None or explainer is None:
+        if model is None or scaler is None or explainer is None or feature_columns is None:
             st.error(t("model_error"))
         else:
             st.subheader(t("upload_header"))
             with st.expander(t("classify_expander_title")):
                 st.write(t("classify_expander_text"))
+                # O CSV de exemplo agora é gerado DINAMICAMENTE com as colunas do modelo
                 sample_data = {col: [np.random.rand()*100] for col in feature_columns}
                 sample_df = pd.DataFrame(sample_data)
                 csv = sample_df.to_csv(index=False).encode('utf-8')
                 st.download_button(label=t("classify_download_button"), data=csv, file_name='exemplo_candidatos_rf.csv', mime='text/csv')
+            
             uploaded_file = st.file_uploader(t("classify_uploader_label"), type="csv", label_visibility="collapsed")
             if uploaded_file is not None:
                 try:
                     df_upload = pd.read_csv(uploaded_file, comment='#', engine='python')
-                    df_renamed = rename_uploaded_columns(df_upload.copy())
-                    if set(feature_columns).issubset(df_renamed.columns):
+                    # A função de renomear agora recebe a lista de features esperada
+                    df_renamed = rename_uploaded_columns(df_upload.copy(), feature_columns)
+                    
+                    # A verificação de colunas agora é feita contra a lista carregada do modelo
+                    missing_cols = list(set(feature_columns) - set(df_renamed.columns))
+                    if not missing_cols:
                         df_to_predict = df_renamed[feature_columns]
                         df_scaled = scaler.transform(df_to_predict)
                         if st.button(t("classify_button"), key="csv_classify", type="primary"):
                              with st.spinner(t("classify_spinner")):
                                 predictions = model.predict(df_scaled)
                                 probas = model.predict_proba(df_scaled)
-                                df_renamed['Predição'] = ['Planeta' if p == 1 else 'Falso Positivo' for p in predictions]
-                                df_renamed['Confiança'] = [f"{p.max()*100:.2f}%" for p in probas]
+                                df_display = df_upload.copy()
+                                df_display['Predição'] = ['Planeta' if p == 1 else 'Falso Positivo' for p in predictions]
+                                df_display['Confiança'] = [f"{p.max()*100:.2f}%" for p in probas]
                              st.subheader(t("results_table_header"))
-                             st.dataframe(df_renamed)
+                             st.dataframe(df_display)
                     else:
-                        st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {list(set(feature_columns) - set(df_renamed.columns))}")
+                        st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {missing_cols}")
                 except Exception as e:
                     st.error(f"Erro ao processar o arquivo CSV: {e}")
             st.divider()
             st.subheader(t("manual_header"))
             with st.form(key="manual_form"):
-                default_values = {'koi_period': 8.7, 'koi_duration': 2.4, 'koi_depth': 846.0, 'koi_impact': 0.7, 'koi_model_snr': 24.8, 'koi_steff': 5912.0, 'koi_slogg': 4.4, 'koi_srad': 0.9, 'koi_prad': 2.2, 'koi_insol': 163.7}
+                # Os valores padrão também são ajustados para as colunas que o modelo realmente usa
+                default_values = {
+                    'koi_period': 8.7, 'koi_duration': 2.4, 'koi_depth': 846.0, 
+                    'koi_impact': 0.7, 'koi_model_snr': 24.8, 'koi_steff': 5912.0, 
+                    'koi_slogg': 4.4, 'koi_srad': 0.9, 'koi_prad': 2.2, 'koi_insol': 163.7
+                }
                 input_data = {}
                 cols = st.columns(3)
+                # O formulário é criado DINAMICAMENTE com as colunas do modelo
                 for i, col_name in enumerate(feature_columns):
                     input_data[col_name] = cols[i % 3].number_input(label=col_name, value=default_values.get(col_name, 0.0), format="%.4f")
+                
                 submitted = st.form_submit_button(t("classify_button"), type="primary")
                 if submitted:
                     with st.spinner(t("classify_spinner")):
                         input_df = pd.DataFrame([input_data])
-                        input_scaled = scaler.transform(input_df)
+                        input_scaled = scaler.transform(input_df[feature_columns]) # Garante a ordem correta
                         prediction_proba = model.predict_proba(input_scaled)[0]
                         prediction = int(np.argmax(prediction_proba))
                         confidence = float(max(prediction_proba))
@@ -304,10 +337,11 @@ def main():
                         st.subheader(t("xai_header"))
                         st.write(t("xai_text"))
                         fig, ax = plt.subplots(figsize=(8, 2))
-                        # Ajuste para RandomForest: SHAP retorna uma lista de arrays
+                        # O índice [1] é usado porque corresponde à classe "Planeta"
                         shap.force_plot(explainer.expected_value[1], shap_values[1][0,:], input_scaled_df.iloc[0,:], matplotlib=True, show=False, text_rotation=10)
                         st.pyplot(fig, bbox_inches='tight')
                         plt.close(fig)
+
     elif st.session_state.page == "nav_performance":
         st.header(t("performance_title"))
         st.write(t("performance_intro"))
@@ -330,6 +364,7 @@ def main():
         with tab3:
             st.header(t("training_header"))
             st.markdown(t("training_text"))
+
 def get_animation_html(overlay_text):
     return f"""
     <div style="width: 100%; height: 320px; overflow: hidden; position: relative; border-radius: 10px; background-color: #0d1117;">
@@ -379,6 +414,6 @@ def get_animation_html(overlay_text):
         }}
     </script>
     """
+
 if __name__ == "__main__":
     main()
-
