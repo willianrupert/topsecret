@@ -342,17 +342,25 @@ def main():
     modelo = carregar_modelo()
     scaler = carregar_scaler()
 
-    # --- Layout Superior (Título e Seletor de Idioma) ---
     col1, col2 = st.columns([0.8, 0.2])
-    with col1:
-        st.title(f'🔭 {t("page_title")}')
     with col2:
         lang_options = {"🇧🇷 Português": "pt", "🇺🇸 English": "en"}
         lang_labels = list(lang_options.keys())
         current_lang_index = lang_labels.index("🇺🇸 English") if st.session_state.lang == 'en' else lang_labels.index("🇧🇷 Português")
-        
-        selected_lang_label = st.selectbox("Idioma/Language", lang_labels, index=current_lang_index, label_visibility="collapsed")
+
+        # key garante reatividade imediata
+        selected_lang_label = st.selectbox(
+            "Idioma/Language",
+            lang_labels,
+            index=current_lang_index,
+            key="select_lang",
+            label_visibility="collapsed"
+        )
+        # Atualiza o idioma imediatamente
         st.session_state.lang = lang_options[selected_lang_label]
+
+    with col1:
+        st.title(f'🔭 {t("page_title")}')
 
     # --- Barra Lateral ---
     with st.sidebar:
