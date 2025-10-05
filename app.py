@@ -38,22 +38,28 @@ def main():
             "project_info": "Projeto para o NASA Space Apps Challenge.",
             "logo_not_found_warning": "Arquivo 'nasa_logo.png' não encontrado.",
             "about_title": "A World Away: Caçando Exoplanetas com Inteligência Artificial",
-            "about_challenge_header": "O Desafio",
+            "about_challenge_header": "Classificação de Candidatos a Exoplanetas com Machine Learning: Insights do Hackathon da NASA",
             "about_challenge_text": """
-            O universo está repleto de planetas fora do nosso sistema solar — os exoplanetas. 
-            Missões da NASA como Kepler e TESS coletam uma quantidade imensa de dados.
-            O nosso desafio é construir uma ferramenta de IA para automatizar e acelerar essa incrível descoberta.
+            Missões astronômicas como a Kepler da NASA geram continuamente vastas quantidades de dados observacionais, abrangendo milhares de detecções de potenciais exoplanetas. O principal desafio, no entanto, não reside na coleta desses dados, mas na sua interpretação e análise significativa em escala. Dentro deste contexto, nosso objetivo durante o hackathon foi desenvolver uma ferramenta computacional capaz de auxiliar na classificação de candidatos a exoplanetas, distinguindo eficazmente entre prováveis candidatos planetários e falsos positivos.
             """,
-            "about_solution_header": "Nossa Solução",
+            "about_solution_header": "Solução Proposta: Uma Plataforma de Descoberta Interativa e Educacional",
             "about_solution_text": """
-            Desenvolvemos uma aplicação web interativa que utiliza um modelo de Machine Learning para analisar dados tabulares de candidatos a exoplanetas, 
-            classificando-os como 'Planeta' ou 'Falso Positivo'. Nossa ferramenta não apenas classifica, mas também **explica suas decisões**,
-            trazendo transparência para a ciência de dados.
+            Para enfrentar este desafio, projetamos e implementamos uma aplicação web interativa que integra algoritmos de machine learning para classificar candidatos a exoplanetas. Além da tarefa de classificação, a plataforma foi concebida para aumentar a acessibilidade e a compreensão dos dados astronômicos, oferecendo uma interface clara e educacional que permite tanto a especialistas quanto a não especialistas explorar o processo de classificação e sua lógica subjacente.
             """,
-            "about_how_header": "Como Funciona?",
+            "about_how_header": "Desenvolvimento Metodológico e Interpretabilidade",
             "about_how_text": """
-            A partir de dados da missão Kepler (KOI), nosso modelo de IA (baseado em RandomForest) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
-            Utilizamos a tecnologia **SHAP** para visualizar exatamente quais parâmetros mais influenciaram cada predição.
+            #### Desafios e Lições Aprendidas
+            Nosso trabalho começou com o dataset Kepler Object of Interest (KOI), que buscamos enriquecer combinando-o com fontes adicionais de informação exoplanetária. Esse processo de integração, no entanto, revelou desafios substanciais. A heterogeneidade das estruturas dos datasets, definições de features e convenções de medição destacou a complexidade inerente à harmonização de dados astronômicos e proporcionou uma compreensão prática da fase de preparação de dados em fluxos de trabalho científicos do mundo real.
+
+            Experimentos iniciais empregando modelos de ensemble learning, especificamente XGBoost, Random Forest e outras técnicas como Redes Neurais, produziram métricas de acurácia inesperadamente altas. No entanto, uma validação subsequente descobriu um problema metodológico crítico: vazamento de dados (data leakage). Features associadas a incertezas de medição e razões sinal-ruído influenciavam desproporcionalmente as decisões do modelo. Consequentemente, o modelo não estava aprendendo a identificar características físicas de exoplanetas, mas sim explorando indicadores de confiança observacional, levando a resultados enganosamente otimistas.
+
+            O reconhecimento dessa limitação motivou uma mudança metodológica. Redefinimos nossa estratégia de seleção de features para focar exclusivamente nas propriedades físicas e orbitais diretamente relacionadas aos trânsitos planetários. Esse refinamento produziu um modelo mais interpretável, cientificamente fundamentado e generalizável, mais alinhado com os fenômenos astrofísicos subjacentes que buscava representar.
+
+            #### Funcionalidade e Interpretabilidade do Modelo
+            Nosso modelo final, baseado no algoritmo Random Forest, gera uma classificação probabilística para cada candidato e incorpora ferramentas de visualização que elucidam a importância relativa das features de entrada no processo de tomada de decisão. Essa funcionalidade aumenta a transparência e a interpretabilidade, transformando a natureza tradicional de "caixa preta" do machine learning em um sistema compreensível e pedagógico. Ao fazer isso, a ferramenta não apenas apoia a análise científica, mas também fomenta uma compreensão mais profunda do raciocínio baseado em dados por trás da classificação de exoplanetas.
+            
+            #### Conclusão
+            Através do desenvolvimento desta aplicação, nossa equipe obteve valiosos insights sobre a interação entre qualidade de dados, seleção de features e confiabilidade do modelo na pesquisa astronômica. O projeto ressaltou a importância do rigor metodológico e da transparência na aplicação da inteligência artificial à descoberta científica. Em última análise, nosso trabalho contribui para o objetivo mais amplo de democratizar o acesso a dados espaciais, ao mesmo tempo que promove a literacia computacional e a curiosidade científica entre públicos diversos.
             """,
             "classify_title": "🔬 Classifique um Candidato a Exoplaneta",
             "classify_intro": "Escolha um método: envie um arquivo CSV ou insira os dados de um único candidato manualmente.",
@@ -117,12 +123,29 @@ def main():
             "project_info": "Project for the NASA Space Apps Challenge.",
             "logo_not_found_warning": "'nasa_logo.png' file not found.",
             "about_title": "A World Away: Hunting for Exoplanets with AI",
-            "about_challenge_header": "The Challenge",
-            "about_challenge_text": "The universe is filled with exoplanets. NASA missions like Kepler collect vast amounts of data. Our challenge is to build an AI tool to automate and accelerate this discovery.",
-            "about_solution_header": "Our Solution",
-            "about_solution_text": "We developed an interactive web app using a Machine Learning model to analyze tabular data, classifying candidates as 'Candidate' or 'False Positive'. Our tool not only classifies but also **explains its decisions**.",
-            "about_how_header": "How It Works",
-            "about_how_text": "Using data from the Kepler mission (KOI), our RandomForest-based AI model learns to identify patterns that differentiate a real transit from other phenomena. We use **SHAP** to visualize what parameters influenced each prediction.",
+            "about_challenge_header": "Exoplanet Candidate Classification through Machine Learning: Insights from the NASA Hackathon",
+            "about_challenge_text": """
+            Astronomical missions such as NASA’s Kepler continuously generate vast quantities of observational data, encompassing thousands of potential exoplanet detections. The primary challenge, however, lies not in the collection of this data, but in its interpretation and meaningful analysis at scale. Within this context, our objective during the hackathon was to develop a computational tool capable of assisting in the classification of exoplanet candidates, effectively distinguishing between likely planetary candidates and false positives.
+            """,
+            "about_solution_header": "Proposed Solution: An Interactive and Educational Discovery Platform",
+            "about_solution_text": """
+            To address this challenge, we designed and implemented an interactive web-based application that integrates machine learning algorithms to classify exoplanet candidates. Beyond the classification task, the platform was conceived to enhance accessibility and comprehension of astronomical data, offering a clear and educational interface that enables both specialists and non-specialists to explore the classification process and its underlying logic.
+            """,
+            "about_how_header": "Methodological Development and Interpretability",
+            "about_how_text": """
+            #### Challenges and Lessons Learned
+            Our work began with the Kepler Object of Interest (KOI) dataset, which we sought to enrich by combining it with additional sources of exoplanetary information. This integration process, however, revealed substantial challenges. The heterogeneity of dataset structures, feature definitions, and measurement conventions highlighted the inherent complexity of astronomical data harmonization and provided a practical understanding of the data preparation phase in real-world scientific workflows.
+
+            Initial experiments employing ensemble learning models, specifically XGBoost, Random Forest and other techniques such as Neural Networks, yielded unexpectedly high accuracy metrics. However, subsequent validation uncovered a critical methodological issue: data leakage. Features associated with measurement uncertainties and signal-to-noise ratios disproportionately influenced the model’s decisions. Consequently, the model was not learning to identify physical characteristics of exoplanets but rather exploiting indicators of observational confidence, leading to misleadingly optimistic results.
+
+            Recognizing this limitation prompted a methodological shift. We redefined our feature selection strategy to focus exclusively on the physical and orbital properties directly related to planetary transits. This refinement produced a more interpretable, scientifically grounded, and generalizable model, better aligned with the underlying astrophysical phenomena it sought to represent.
+
+            #### Model Functionality and Interpretability
+            Our final model, based on the Random Forest algorithm, generates a probabilistic classification for each candidate and incorporates visualization tools that elucidate the relative importance of input features in the decision-making process. This functionality enhances transparency and interpretability, transforming the traditional “black box” nature of machine learning into a comprehensible and pedagogical system. In doing so, the tool not only supports scientific analysis but also fosters a deeper understanding of the data-driven reasoning behind exoplanet classification.
+
+            #### Conclusion
+            Through the development of this application, our team gained valuable insights into the interplay between data quality, feature selection, and model reliability in astronomical research. The project underscored the importance of methodological rigor and transparency in the application of artificial intelligence to scientific discovery. Ultimately, our work contributes to the broader objective of democratizing access to space data while promoting computational literacy and scientific curiosity among diverse audiences.
+            """,
             "classify_title": "🔬 Classify an Exoplanet Candidate",
             "classify_intro": "Choose a method: upload a CSV file or enter data manually.",
             "upload_header": "Option 1: CSV File Upload",
