@@ -9,29 +9,22 @@ matplotlib.use('Agg') # Essencial para rodar Matplotlib no Streamlit
 import matplotlib.pyplot as plt
 import os
 from io import StringIO
+from PIL import Image
+
 
 def main():
     # --- Configuração da Página ---
     st.set_page_config(
-        page_title="ExoplanetLIA",
+        page_title="Exoplanet Hunter LIA",
         page_icon="🔭",
         layout="wide",
         initial_sidebar_state="expanded"
     )
 
-    # --- Inicialização do Estado da Sessão ---
-    if 'lang' not in st.session_state:
-        st.session_state.lang = 'pt'
-    if 'page' not in st.session_state:
-        st.session_state.page = "nav_about"
-
-    valid_pages = ["nav_about", "nav_classify", "nav_performance"]
-    if st.session_state.page not in valid_pages:
-        st.session_state.page = "nav_about"
-
     # --- Dicionário de Idiomas (i18n) ---
     LANGUAGES = {
         "pt": {
+            "lang_button": "English",
             "animation_overlay_text": "Encontre exoplanetas conosco",
             "page_title": "Caçador de Exoplanetas LIA",
             "sidebar_title": "Exoplanet Hunter AI",
@@ -78,8 +71,11 @@ def main():
             "classify_false_positive": "❌ **Falso Positivo**",
             "classify_confidence_metric": "Confiança do Modelo",
             "xai_header": "Explicação da IA (XAI com SHAP)",
-            "xai_text": "Este gráfico mostra quais fatores influenciaram a decisão do modelo. Forças em **vermelho** empurram a decisão para 'Planeta', enquanto forças em **azul** empurram para 'Falso Positivo'.",
             "results_table_header": "Resultados para o arquivo enviado",
+            "prediction_col": "Predição",
+            "confidence_col": "Confiança",
+            "planet_val": "Planeta",
+            "false_positive_val": "Falso Positivo",
             "performance_title": "📊 Performance do Modelo de IA",
             "performance_intro": "A transparência é fundamental. Aqui mostramos como nosso modelo se saiu em dados que ele nunca havia visto antes.",
             "performance_tab_metrics": "**Métricas Principais**",
@@ -89,10 +85,10 @@ def main():
             "metric_precision": "Precisão",
             "metric_recall": "Recall",
             "metrics_desc": """
-                - **Acurácia:** A porcentagem de classificações corretas no geral.
-                - **Precisão:** De todas as vezes que o modelo disse "é um planeta", quantas vezes ele estava certo?
-                - **Recall:** De todos os planetas reais, quantos o nosso modelo conseguiu encontrar?
-                """,
+            - **Acurácia:** A porcentagem de classificações corretas no geral.
+            - **Precisão:** De todas as vezes que o modelo disse "é um planeta", quantas vezes ele estava certo?
+            - **Recall:** De todos os planetas reais, quantos o nosso modelo conseguiu encontrar?
+            """,
             "matrix_header": "Análise Visual da Performance",
             "matrix_text": "O gráfico de importância de features mostra o impacto médio de cada característica nas predições do modelo.",
             "matrix_not_found": "Arquivo 'feature_importance_rf.png' não encontrado.",
@@ -100,14 +96,15 @@ def main():
             "matrix_expander_text": "As barras mais longas representam as features mais influentes para o modelo.",
             "training_header": "Detalhes do Treinamento do Modelo",
             "training_text": """
-                - **Dataset Utilizado:** Kepler Objects of Interest (KOI)
-                - **Algoritmo:** RandomForestClassifier
-                - **Features:** As features utilizadas são carregadas dinamicamente a partir do modelo treinado.
-                - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
-                """
+            - **Dataset Utilizado:** Kepler Objects of Interest (KOI)
+            - **Algoritmo:** RandomForestClassifier
+            - **Features:** As features utilizadas são carregadas dinamicamente a partir do modelo treinado.
+            - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
+            """
         },
         "en": {
-             "animation_overlay_text": "Find exoplanets with us",
+            "lang_button": "Português",
+            "animation_overlay_text": "Find exoplanets with us",
             "page_title": "Exoplanet Hunter LIA",
             "sidebar_title": "Exoplanet Hunter AI",
             "sidebar_version": "RandomForest Version",
@@ -123,7 +120,7 @@ def main():
             "about_challenge_header": "The Challenge",
             "about_challenge_text": "The universe is filled with exoplanets. NASA missions like Kepler collect vast amounts of data. Our challenge is to build an AI tool to automate and accelerate this discovery.",
             "about_solution_header": "Our Solution",
-            "about_solution_text": "We developed an interactive web app using a Machine Learning model to analyze tabular data, classifying candidates as 'Planet' or 'False Positive'. Our tool not only classifies but also **explains its decisions**.",
+            "about_solution_text": "We developed an interactive web app using a Machine Learning model to analyze tabular data, classifying candidates as 'Candidate' or 'False Positive'. Our tool not only classifies but also **explains its decisions**.",
             "about_how_header": "How It Works",
             "about_how_text": "Using data from the Kepler mission (KOI), our RandomForest-based AI model learns to identify patterns that differentiate a real transit from other phenomena. We use **SHAP** to visualize what parameters influenced each prediction.",
             "classify_title": "🔬 Classify an Exoplanet Candidate",
@@ -142,8 +139,11 @@ def main():
             "classify_false_positive": "❌ **False Positive**",
             "classify_confidence_metric": "Model Confidence",
             "xai_header": "AI Explanation (XAI with SHAP)",
-            "xai_text": "This chart shows what factors influenced the model's decision. **Red** forces push the prediction toward 'Planet', while **blue** forces push it toward 'False Positive'.",
             "results_table_header": "Results for the uploaded file",
+            "prediction_col": "Prediction",
+            "confidence_col": "Confidence",
+            "planet_val": "Planet",
+            "false_positive_val": "False Positive",
             "performance_title": "📊 AI Model Performance",
             "performance_intro": "Transparency is key. Here we show how our model performed on unseen data.",
             "performance_tab_metrics": "**Key Metrics**",
@@ -153,10 +153,10 @@ def main():
             "metric_precision": "Precision",
             "metric_recall": "Recall",
             "metrics_desc": """
-                - **Accuracy:** The overall percentage of correct classifications.
-                - **Precision:** Of all "planet" predictions, how many were correct?
-                - **Recall:** Of all actual planets, how many did our model find?
-                """,
+            - **Accuracy:** The overall percentage of correct classifications.
+            - **Precision:** Of all "planet" predictions, how many were correct?
+            - **Recall:** Of all actual planets, how many did our model find?
+            """,
             "matrix_header": "Visual Performance Analysis",
             "matrix_text": "The feature importance chart shows the average impact of each feature.",
             "matrix_not_found": "'feature_importance_rf.png' file not found.",
@@ -164,20 +164,37 @@ def main():
             "matrix_expander_text": "Longer bars represent more influential features for the model.",
             "training_header": "Model Training Details",
             "training_text": """
-                - **Dataset Used:** Kepler Objects of Interest (KOI)
-                - **Algorithm:** RandomForestClassifier
-                - **Features:** The features used are dynamically loaded from the trained model.
-                - **Data Split:** 80% for training, 20% for testing.
-                """
+            - **Dataset Used:** Kepler Objects of Interest (KOI)
+            - **Algorithm:** RandomForestClassifier
+            - **Features:** The features used are dynamically loaded from the trained model.
+            - **Data Split:** 80% for training, 20% for testing.
+            """
         }
     }
 
+    # --- Inicialização do Estado da Sessão ---
+    if 'lang' not in st.session_state:
+        st.session_state.lang = 'en' # Default em Inglês
+    if 'page' not in st.session_state:
+        st.session_state.page = "nav_about"
+
+    valid_pages = ["nav_about", "nav_classify", "nav_performance"]
+    if st.session_state.page not in valid_pages:
+        st.session_state.page = "nav_about"
     def t(key):
         return LANGUAGES[st.session_state.lang].get(key, key)
 
-    # --- CORREÇÃO APLICADA AQUI ---
-    # Este dicionário agora contém apenas os aliases para as colunas
-    # que o modelo REALMENTE utiliza. As colunas que causavam o erro foram removidas.
+    def switch_language():
+        st.session_state.lang = 'pt' if st.session_state.lang == 'en' else 'en'
+
+    # --- Botão de troca de idioma ---
+    _, col2 = st.columns([0.8, 0.2])
+    with col2:
+        if st.button(f"🇧🇷 / 🇺🇸 {t('lang_button')}", use_container_width=True):
+            switch_language()
+            st.rerun()
+
+    # Este dicionário contém aliases para as colunas que o modelo utiliza.
     COLUMN_ALIASES = {
         'koi_period': ['period'], 
         'koi_duration': ['duration'], 
@@ -189,27 +206,20 @@ def main():
         'koi_slogg': ['slogg', 'tce_slogg'], 
         'koi_srad': ['srad', 'tce_srad'],
         'koi_impact': ['impact', 'tce_impact']
-        # As colunas 'koi_num_transits', 'koi_max_mult_ev', 'koi_dor' foram removidas
-        # pois o modelo existente não foi treinado com elas.
     }
 
     def rename_uploaded_columns(df, expected_features):
         rename_map = {}
         df_columns_lower = [str(col).lower() for col in df.columns]
-        
-        # Itera apenas sobre as features que o modelo realmente espera
         for standard_name in expected_features:
-            # Pega a lista de aliases para a feature atual, ou uma lista vazia se não houver
             alias_list = COLUMN_ALIASES.get(standard_name, [])
-            full_alias_list = alias_list + [standard_name] # Inclui o nome padrão na busca
-            
+            full_alias_list = alias_list + [standard_name]
             for alias in full_alias_list:
                 if alias.lower() in df_columns_lower:
                     original_col_index = df_columns_lower.index(alias.lower())
                     original_col_name = df.columns[original_col_index]
                     rename_map[original_col_name] = standard_name
-                    break # Para quando encontrar o primeiro alias correspondente
-                    
+                    break
         df.rename(columns=rename_map, inplace=True)
         return df
 
@@ -220,7 +230,6 @@ def main():
             scaler = joblib.load('scaler_rf.joblib')
             with open('feature_columns_rf.pkl', 'rb') as f:
                 feature_columns = pickle.load(f)
-            # O explainer é criado aqui para garantir que ele corresponda ao modelo carregado
             explainer = shap.TreeExplainer(model)
             return model, scaler, explainer, feature_columns
         except FileNotFoundError:
@@ -239,10 +248,13 @@ def main():
         st.markdown(f"**{t('sidebar_version')}**")
         nav_options = {"nav_about": t("nav_about"), "nav_classify": t("nav_classify"), "nav_performance": t("nav_performance")}
         nav_keys_list = list(nav_options.keys())
-        st.radio(label=t("sidebar_nav"), options=nav_keys_list, index=nav_keys_list.index(st.session_state.page), format_func=lambda key: nav_options[key], key="navigation_radio")
-        if st.session_state.navigation_radio != st.session_state.page:
-            st.session_state.page = st.session_state.navigation_radio
+        # Usando o st.session_state.page para garantir que o rádio button reflita a página atual
+        page_index = nav_keys_list.index(st.session_state.page) if st.session_state.page in nav_keys_list else 0
+        chosen_page = st.radio(label=t("sidebar_nav"), options=nav_keys_list, index=page_index, format_func=lambda key: nav_options[key])
+        if chosen_page != st.session_state.page:
+            st.session_state.page = chosen_page
             st.rerun()
+
         st.divider()
         if model is None:
             st.error(t("model_error"))
@@ -268,41 +280,40 @@ def main():
             st.subheader(t("upload_header"))
             with st.expander(t("classify_expander_title")):
                 st.write(t("classify_expander_text"))
-                # O CSV de exemplo agora é gerado DINAMICAMENTE com as colunas do modelo
                 sample_data = {col: [np.random.rand()*100] for col in feature_columns}
                 sample_df = pd.DataFrame(sample_data)
                 csv = sample_df.to_csv(index=False).encode('utf-8')
                 st.download_button(label=t("classify_download_button"), data=csv, file_name='exemplo_candidatos_rf.csv', mime='text/csv')
-            
             uploaded_file = st.file_uploader(t("classify_uploader_label"), type="csv", label_visibility="collapsed")
             if uploaded_file is not None:
                 try:
                     df_upload = pd.read_csv(uploaded_file, comment='#', engine='python')
-                    # A função de renomear agora recebe a lista de features esperada
                     df_renamed = rename_uploaded_columns(df_upload.copy(), feature_columns)
-                    
-                    # A verificação de colunas agora é feita contra a lista carregada do modelo
                     missing_cols = list(set(feature_columns) - set(df_renamed.columns))
                     if not missing_cols:
                         df_to_predict = df_renamed[feature_columns]
                         df_scaled = scaler.transform(df_to_predict)
                         if st.button(t("classify_button"), key="csv_classify", type="primary"):
-                             with st.spinner(t("classify_spinner")):
+                            with st.spinner(t("classify_spinner")):
                                 predictions = model.predict(df_scaled)
                                 probas = model.predict_proba(df_scaled)
-                                df_display = df_upload.copy()
-                                df_display['Predição'] = ['Planeta' if p == 1 else 'Falso Positivo' for p in predictions]
-                                df_display['Confiança'] = [f"{p.max()*100:.2f}%" for p in probas]
-                             st.subheader(t("results_table_header"))
-                             st.dataframe(df_display)
+                                # --- ALTERAÇÃO SOLICITADA AQUI ---
+                                results_df = pd.DataFrame({
+                                    t('prediction_col'): ["Candidate" if p == 1 else t('false_positive_val') for p in predictions],
+                                    t('confidence_col'): [f"{p.max()*100:.2f}%" for p in probas]
+                                })
+                                df_display = pd.concat([results_df, df_upload.copy()], axis=1)
+                                st.subheader(t("results_table_header"))
+                                st.dataframe(df_display)
                     else:
                         st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {missing_cols}")
                 except Exception as e:
                     st.error(f"Erro ao processar o arquivo CSV: {e}")
             st.divider()
+            
+            # --- SEÇÃO CORRIGIDA ---
             st.subheader(t("manual_header"))
             with st.form(key="manual_form"):
-                # Os valores padrão também são ajustados para as colunas que o modelo realmente usa
                 default_values = {
                     'koi_period': 8.7, 'koi_duration': 2.4, 'koi_depth': 846.0, 
                     'koi_impact': 0.7, 'koi_model_snr': 24.8, 'koi_steff': 5912.0, 
@@ -310,37 +321,63 @@ def main():
                 }
                 input_data = {}
                 cols = st.columns(3)
-                # O formulário é criado DINAMICAMENTE com as colunas do modelo
                 for i, col_name in enumerate(feature_columns):
                     input_data[col_name] = cols[i % 3].number_input(label=col_name, value=default_values.get(col_name, 0.0), format="%.4f")
-                
                 submitted = st.form_submit_button(t("classify_button"), type="primary")
                 if submitted:
                     with st.spinner(t("classify_spinner")):
                         input_df = pd.DataFrame([input_data])
-                        input_scaled = scaler.transform(input_df[feature_columns]) # Garante a ordem correta
+                        input_scaled = scaler.transform(input_df[feature_columns])
                         prediction_proba = model.predict_proba(input_scaled)[0]
                         prediction = int(np.argmax(prediction_proba))
                         confidence = float(max(prediction_proba))
                         input_scaled_df = pd.DataFrame(input_scaled, columns=feature_columns)
                         shap_values = explainer.shap_values(input_scaled_df)
-                    st.subheader(t("classify_results_header"))
-                    col1, col2 = st.columns([0.4, 0.6])
-                    with col1:
-                        st.subheader(t("classify_verdict_subheader"))
-                        if prediction == 1:
-                            st.success(t("classify_planet_candidate"))
-                        else:
-                            st.error(t("classify_false_positive"))
-                        st.metric(label=t("classify_confidence_metric"), value=f"{confidence*100:.2f}%")
-                    with col2:
-                        st.subheader(t("xai_header"))
-                        st.write(t("xai_text"))
-                        fig, ax = plt.subplots(figsize=(8, 2))
-                        # O índice [1] é usado porque corresponde à classe "Planeta"
-                        shap.force_plot(explainer.expected_value[1], shap_values[1][0,:], input_scaled_df.iloc[0,:], matplotlib=True, show=False, text_rotation=10)
-                        st.pyplot(fig, bbox_inches='tight')
-                        plt.close(fig)
+                        st.subheader(t("classify_results_header"))
+                        col1, col2 = st.columns([0.4, 0.6])
+                        with col1:
+                            st.subheader(t("classify_verdict_subheader"))
+                            if prediction == 1:
+                                st.success(t("classify_planet_candidate"))
+                            else:
+                                st.error(t("classify_false_positive"))
+                            st.metric(label=t("classify_confidence_metric"), value=f"{confidence*100:.2f}%")
+                        with col2:
+                            st.subheader(t("xai_header"))
+                            fig, ax = plt.subplots(figsize=(8, 2))
+                            
+                            # --- INÍCIO DA CORREÇÃO ROBUSTA ---
+                            # Corrige formatos dependendo da estrutura retornada pelo SHAP
+                            if isinstance(shap_values, list):
+                                # Modelos binários retornam lista [classe0, classe1]
+                                shap_values_to_plot = shap_values[1]  # classe positiva
+                            else:
+                                shap_values_to_plot = shap_values
+
+                            # Corrige expected_value (garante escalar)
+                            expected_value_raw = explainer.expected_value
+                            if isinstance(expected_value_raw, (list, np.ndarray)):
+                                expected_value_to_plot = expected_value_raw[1] if len(expected_value_raw) > 1 else expected_value_raw[0]
+                            else:
+                                expected_value_to_plot = expected_value_raw
+
+                            # Garante que shap_values_to_plot é 1D (uma amostra apenas)
+                            shap_values_sample = shap_values_to_plot[0] if getattr(shap_values_to_plot, "ndim", 1) > 1 else shap_values_to_plot
+
+                            # Garante que expected_value seja escalar, não array
+                            if isinstance(expected_value_to_plot, (list, np.ndarray)):
+                                expected_value_to_plot = float(np.ravel(expected_value_to_plot)[0])
+
+                            # --- PLOTAGEM SHAP ---
+                            force_plot_html = shap.force_plot(
+                                expected_value_to_plot,
+                                shap_values_sample,
+                                input_scaled_df.iloc[0, :],
+                                matplotlib=False
+                            )
+
+                            st.components.v1.html(force_plot_html.html(), height=300)
+                            # --- FIM DA CORREÇÃO ---
 
     elif st.session_state.page == "nav_performance":
         st.header(t("performance_title"))
@@ -348,9 +385,9 @@ def main():
         tab1, tab2, tab3 = st.tabs([t("performance_tab_metrics"), t("performance_tab_matrix"), t("performance_tab_training")])
         with tab1:
             col1, col2, col3 = st.columns(3)
-            col1.metric(t("metric_accuracy"), "98.8%") 
-            col2.metric(t("metric_precision"), "98.1%")
-            col3.metric(t("metric_recall"), "98.2%")
+            col1.metric(t("metric_accuracy"), "85.0%") 
+            col2.metric(t("metric_precision"), "85.0%")
+            col3.metric(t("metric_recall"), "85.0%")
             st.markdown(t("metrics_desc"))
         with tab2:
             st.header(t("matrix_header"))
@@ -376,42 +413,42 @@ def get_animation_html(overlay_text):
         </div>
     </div>
     <script>
-        const canvas = document.getElementById('starfield');
-        if (canvas) {{
-            const container = canvas.parentElement;
-            function resizeCanvas() {{
-                canvas.width = container.offsetWidth;
-                canvas.height = container.offsetHeight;
-            }}
-            resizeCanvas();
-            const ctx = canvas.getContext('2d');
-            const stars = [];
-            const numStars = 400;
-            function random(min, max){{ return Math.random()*(max-min)+min; }}
-            function createStars(){{
-                for(let i=0;i<numStars;i++){{
-                    stars.push({{x:random(0,canvas.width), y:random(0,canvas.height), size:random(0.5,2.5), speed:random(0.05,0.4)}});
-                }}
-            }}
-            function draw(){{
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                ctx.fillStyle = '#c9d1d9';
-                for(let s of stars){{
-                    ctx.beginPath();
-                    ctx.arc(s.x,s.y,s.size/2,0,Math.PI*2);
-                    ctx.fill();
-                }}
-            }}
-            function update(){{
-                for(let s of stars){{
-                    s.y += s.speed;
-                    if(s.y > canvas.height){{ s.y = 0; s.x = Math.random()*canvas.width; }}
-                }}
-            }}
-            function loop(){{ draw(); update(); requestAnimationFrame(loop); }}
-            createStars(); loop();
-            window.addEventListener('resize', function(){{ resizeCanvas(); stars.length=0; createStars(); }});
+    const canvas = document.getElementById('starfield');
+    if (canvas) {{
+        const container = canvas.parentElement;
+        function resizeCanvas() {{
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
         }}
+        resizeCanvas();
+        const ctx = canvas.getContext('2d');
+        const stars = [];
+        const numStars = 400;
+        function random(min, max){{ return Math.random()*(max-min)+min; }}
+        function createStars(){{
+            for(let i=0;i<numStars;i++){{
+                stars.push({{x:random(0,canvas.width), y:random(0,canvas.height), size:random(0.5,2.5), speed:random(0.05,0.4)}});
+            }}
+        }}
+        function draw(){{
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#c9d1d9';
+            for(let s of stars){{
+                ctx.beginPath();
+                ctx.arc(s.x,s.y,s.size/2,0,Math.PI*2);
+                ctx.fill();
+            }}
+        }}
+        function update(){{
+            for(let s of stars){{
+                s.y += s.speed;
+                if(s.y > canvas.height){{ s.y = 0; s.x = Math.random()*canvas.width; }}
+            }}
+        }}
+        function loop(){{ draw(); update(); requestAnimationFrame(loop); }}
+        createStars(); loop();
+        window.addEventListener('resize', function(){{ resizeCanvas(); stars.length=0; createStars(); }});
+    }}
     </script>
     """
 
