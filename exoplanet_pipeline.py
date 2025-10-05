@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-import shap
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
@@ -26,7 +24,6 @@ def load_koi_data():
         'slogg': 'koi_slogg', 'srad': 'koi_srad'
     }
     
-    # Voltando a usar 'koi_disposition' que é a coluna mais confiável para o KOI.
     disposition_col = ('koi_disposition', ['CONFIRMED', 'FALSE POSITIVE'])
 
     print("Processando dados...")
@@ -68,7 +65,6 @@ def train_exoplanet_classifier(df, feature_cols):
     y = df['is_planet']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
     
-    # **NOVO: Escalonamento das Features**
     print("\nEscalonando os dados...")
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -76,13 +72,12 @@ def train_exoplanet_classifier(df, feature_cols):
     
     scale_pos_weight = 1 if y_train.value_counts().get(1, 0) == 0 else y_train.value_counts()[0] / y_train.value_counts()[1]
     
-    # **NOVO: Otimização de Hiperparâmetros com GridSearchCV**
     print("\nIniciando busca por hiperparâmetros para o modelo XGBoost...")
     
     param_grid = {
         'max_depth': [3, 5, 7],
-        'learning_rate': [0.01, 0.1, 0.2],
-        'n_estimators': [100, 200, 300]
+        'learning_rate': [0.01, 0.1],
+        'n_estimators': [100, 200]
     }
 
     xgb_model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', use_label_encoder=False, scale_pos_weight=scale_pos_weight, random_state=42)
@@ -101,45 +96,23 @@ def train_exoplanet_classifier(df, feature_cols):
     print("\nRelatório de Classificação:")
     print(classification_report(y_test, preds, target_names=['Falso Positivo', 'Planeta']))
     
-    # Retorna o scaler e os dados escalonados para o SHAP
     return best_model, X_test_scaled, y_test, scaler, feature_cols, pd.DataFrame(X_test_scaled, columns=feature_cols)
 
-# --- 3. Explicabilidade com SHAP ---
-def explain_model_with_shap(model, X_test_scaled_df):
-    print("\nGerando explicações com SHAP para o modelo otimizado...")
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_test_scaled_df)
-    
-    print("Plotando a importância global das features...")
-    plt.figure()
-    shap.summary_plot(shap_values, X_test_scaled_df, plot_type="bar", show=False)
-    plt.title("Importância Global das Features (SHAP - Otimizado)")
-    plt.tight_layout()
-    plt.savefig("shap_global_importance_optimized.png")
-    plt.close()
-    print("Gráfico 'shap_global_importance_optimized.png' salvo.")
-
-    return explainer
 
 if __name__ == '__main__':
     koi_df, feature_columns = load_koi_data()
     if not koi_df.empty and feature_columns:
-        # **ATUALIZADO: Recebe mais artefatos da função de treino**
         trained_model, X_test_data, y_test_data, fitted_scaler, feature_cols, X_test_df = train_exoplanet_classifier(koi_df, feature_columns)
-        explainer = explain_model_with_shap(trained_model, X_test_df)
-
-        # **ATUALIZADO: Salva também o scaler**
-        print("\nSalvando o modelo, scaler, explainer e lista de features...")
-        joblib.dump(trained_model, 'xgboost_model_koi_only.joblib')
-        joblib.dump(fitted_scaler, 'scaler_koi_only.joblib') # Salva o scaler
         
-        with open('shap_explainer_koi_only.pkl', 'wb') as f:
-            pickle.dump(explainer, f)
+        # O explainer não é mais salvo, apenas o modelo, scaler e colunas.
+        print("\nSalvando o modelo, scaler e lista de features...")
+        joblib.dump(trained_model, 'xgboost_model_koi_only.joblib')
+        joblib.dump(fitted_scaler, 'scaler_koi_only.joblib')
             
         with open('feature_columns_koi_only.pkl', 'wb') as f:
             pickle.dump(feature_cols, f)
 
-        print("Artefatos de IA (Otimizados) salvos com sucesso!")
+        print("Artefatos de IA salvos com sucesso!")
         
     else:
         print("Nenhum dado foi carregado ou processado. Encerrando o script.")
