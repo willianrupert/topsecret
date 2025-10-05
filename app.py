@@ -284,34 +284,54 @@ def main():
                 sample_df = pd.DataFrame(sample_data)
                 csv = sample_df.to_csv(index=False).encode('utf-8')
                 st.download_button(label=t("classify_download_button"), data=csv, file_name='exemplo_candidatos_rf.csv', mime='text/csv')
+            
             uploaded_file = st.file_uploader(t("classify_uploader_label"), type="csv", label_visibility="collapsed")
             if uploaded_file is not None:
                 try:
                     df_upload = pd.read_csv(uploaded_file, comment='#', engine='python')
                     df_renamed = rename_uploaded_columns(df_upload.copy(), feature_columns)
                     missing_cols = list(set(feature_columns) - set(df_renamed.columns))
+
                     if not missing_cols:
                         df_to_predict = df_renamed[feature_columns]
+
+                        # --- INÍCIO DA CORREÇÃO ---
+                        # Verifica se existe algum valor NaN no DataFrame a ser previsto.
+                        if df_to_predict.isnull().sum().sum() > 0:
+                            # Informa ao usuário que valores ausentes foram encontrados e serão tratados.
+                            st.warning(
+                                "Atenção: Seu arquivo CSV contém valores ausentes (NaN). "
+                                "Para prosseguir com a análise, eles foram preenchidos com a média de suas "
+                                "respectivas colunas. Para resultados mais precisos, considere preencher "
+                                "esses valores no arquivo original."
+                            )
+                            # Preenche os valores NaN com a média de cada coluna.
+                            # Isso deve ser feito ANTES de passar os dados para o scaler.
+                            df_to_predict = df_to_predict.fillna(df_to_predict.mean())
+                        # --- FIM DA CORREÇÃO ---
+                        
+                        # Agora o df_to_predict está limpo, sem NaNs.
                         df_scaled = scaler.transform(df_to_predict)
+
                         if st.button(t("classify_button"), key="csv_classify", type="primary"):
                             with st.spinner(t("classify_spinner")):
                                 predictions = model.predict(df_scaled)
                                 probas = model.predict_proba(df_scaled)
-                                # --- ALTERAÇÃO SOLICITADA AQUI ---
                                 results_df = pd.DataFrame({
-                                    t('prediction_col'): ["Candidate" if p == 1 else t('false_positive_val') for p in predictions],
+                                    t('prediction_col'): [t('planet_val') if p == 1 else t('false_positive_val') for p in predictions],
                                     t('confidence_col'): [f"{p.max()*100:.2f}%" for p in probas]
                                 })
+                                # Mantém uma cópia do upload original para exibição
                                 df_display = pd.concat([results_df, df_upload.copy()], axis=1)
                                 st.subheader(t("results_table_header"))
                                 st.dataframe(df_display)
                     else:
-                        st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {missing_cols}")
+                        st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {', '.join(missing_cols)}")
                 except Exception as e:
                     st.error(f"Erro ao processar o arquivo CSV: {e}")
+            
             st.divider()
             
-            # --- SEÇÃO CORRIGIDA ---
             st.subheader(t("manual_header"))
             with st.form(key="manual_form"):
                 default_values = {
@@ -344,40 +364,30 @@ def main():
                             st.metric(label=t("classify_confidence_metric"), value=f"{confidence*100:.2f}%")
                         with col2:
                             st.subheader(t("xai_header"))
-                            fig, ax = plt.subplots(figsize=(8, 2))
-                            
-                            # --- INÍCIO DA CORREÇÃO ROBUSTA ---
-                            # Corrige formatos dependendo da estrutura retornada pelo SHAP
+                            # Correção robusta para plotagem SHAP
                             if isinstance(shap_values, list):
-                                # Modelos binários retornam lista [classe0, classe1]
-                                shap_values_to_plot = shap_values[1]  # classe positiva
+                                shap_values_to_plot = shap_values[1]
                             else:
                                 shap_values_to_plot = shap_values
 
-                            # Corrige expected_value (garante escalar)
                             expected_value_raw = explainer.expected_value
                             if isinstance(expected_value_raw, (list, np.ndarray)):
                                 expected_value_to_plot = expected_value_raw[1] if len(expected_value_raw) > 1 else expected_value_raw[0]
                             else:
                                 expected_value_to_plot = expected_value_raw
 
-                            # Garante que shap_values_to_plot é 1D (uma amostra apenas)
                             shap_values_sample = shap_values_to_plot[0] if getattr(shap_values_to_plot, "ndim", 1) > 1 else shap_values_to_plot
 
-                            # Garante que expected_value seja escalar, não array
                             if isinstance(expected_value_to_plot, (list, np.ndarray)):
                                 expected_value_to_plot = float(np.ravel(expected_value_to_plot)[0])
 
-                            # --- PLOTAGEM SHAP ---
                             force_plot_html = shap.force_plot(
                                 expected_value_to_plot,
                                 shap_values_sample,
                                 input_scaled_df.iloc[0, :],
                                 matplotlib=False
                             )
-
                             st.components.v1.html(force_plot_html.html(), height=300)
-                            # --- FIM DA CORREÇÃO ---
 
     elif st.session_state.page == "nav_performance":
         st.header(t("performance_title"))
