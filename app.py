@@ -25,6 +25,11 @@ def main():
     if 'page' not in st.session_state:
         st.session_state.page = "nav_about"
 
+    # **CORREÇÃO: Trava de segurança para o estado da página para evitar o ValueError**
+    valid_pages = ["nav_about", "nav_classify", "nav_performance"]
+    if st.session_state.page not in valid_pages:
+        st.session_state.page = "nav_about" # Reinicia para o padrão se o estado for inválido
+
     # --- Dicionário de Idiomas (i18n) ---
     LANGUAGES = {
         "pt": {
@@ -193,7 +198,6 @@ def main():
     def t(key):
         return LANGUAGES[st.session_state.lang].get(key, key)
 
-    # **NOVO: Dicionário de sinônimos para os nomes das colunas**
     COLUMN_ALIASES = {
         'period': ['koi_period', 'pl_orbper', 'toi_period'],
         'duration': ['koi_duration', 'pl_trandur', 'toi_duration'],
@@ -207,29 +211,24 @@ def main():
         'srad': ['koi_srad', 'st_rad', 'toi_srad']
     }
 
-    # **NOVO: Função para renomear colunas automaticamente**
     def rename_uploaded_columns(df):
         rename_map = {}
-        # Normaliza as colunas do DataFrame para minúsculas para uma correspondência robusta
         df_columns_lower = [str(col).lower() for col in df.columns]
 
         for standard_name, alias_list in COLUMN_ALIASES.items():
             for alias in alias_list:
                 if alias.lower() in df_columns_lower:
-                    # Encontra o nome da coluna original (preservando o caso) para renomear
                     original_col_index = df_columns_lower.index(alias.lower())
                     original_col_name = df.columns[original_col_index]
                     rename_map[original_col_name] = standard_name
-                    break # Encontrou uma correspondência, passa para o próximo nome padrão
+                    break
         
         df.rename(columns=rename_map, inplace=True)
         return df
 
-    # --- Funções de Carregamento dos Artefatos de IA ---
     @st.cache_resource
     def load_artifacts():
         try:
-            # Carrega os artefatos do modelo KOI-Only
             model = joblib.load('xgboost_model_koi_only.joblib')
             scaler = joblib.load('scaler_koi_only.joblib')
             with open('shap_explainer_koi_only.pkl', 'rb') as f:
@@ -242,10 +241,8 @@ def main():
 
     model, scaler, explainer, feature_columns = load_artifacts()
 
-    # --- Layout da Página ---
     st.title(f'🔭 {t("page_title")}')
 
-    # --- Barra Lateral ---
     with st.sidebar:
         if os.path.exists('nasa_logo.png'):
             st.image("nasa_logo.png", use_container_width=True)
@@ -281,8 +278,6 @@ def main():
 
         st.info(t("project_info"))
 
-    # --- Roteamento de Páginas ---
-
     if st.session_state.page == "nav_about":
         st.components.v1.html(get_animation_html(t("animation_overlay_text")), height=320)
         st.header(t("about_challenge_header"))
@@ -299,7 +294,6 @@ def main():
         if model is None or scaler is None:
             st.error(t("model_error"))
         else:
-            # --- Seção de Upload de CSV ---
             st.subheader(t("upload_header"))
             with st.expander(t("classify_expander_title")):
                 st.write(t("classify_expander_text"))
@@ -319,7 +313,6 @@ def main():
                 try:
                     df_upload = pd.read_csv(uploaded_file, comment='#', engine='python')
                     
-                    # **NOVO: Renomeia as colunas do arquivo enviado**
                     df_renamed = rename_uploaded_columns(df_upload.copy())
                     
                     if set(feature_columns).issubset(df_renamed.columns):
@@ -343,7 +336,6 @@ def main():
 
             st.divider()
 
-            # --- Seção de Entrada Manual ---
             st.subheader(t("manual_header"))
             
             with st.form(key="manual_form"):
@@ -412,7 +404,6 @@ def main():
 
         with tab1:
             col1, col2, col3 = st.columns(3)
-            # Valores de exemplo - idealmente, salve e carregue do pipeline
             col1.metric(t("metric_accuracy"), "94.0%")
             col2.metric(t("metric_precision"), "91.0%")
             col3.metric(t("metric_recall"), "94.0%")
