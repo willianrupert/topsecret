@@ -3,70 +3,54 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 import joblib
 import pickle
 
-# --- 1. Carregamento e Preparação dos Dados ---
 
 def load_and_prepare_koi_data():
-    """
-    Carrega e prepara os dados do KOI, usando a lógica do script de exemplo.
-    """
     print("Usando o serviço TAP da NASA para carregar dados do Kepler (KOI)...")
     url_koi = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select%20%2A%20from%20cumulative&format=csv"
     
-    try:
-        koi = pd.read_csv(url_koi, comment='#')
-        print(f"KOI shape inicial: {koi.shape}")
-    except Exception as e:
-        print(f"ERRO: Falha ao carregar dados. {e}")
-        return pd.DataFrame(), []
+    koi = pd.read_csv(url_koi, comment='#')
+    print(f"KOI shape inicial: {koi.shape}")
 
-    # Coluna alvo e mapeamento
-    target_col = "koi_disposition" # Usando koi_disposition por ser mais completo
-    koi["label"] = koi[target_col].apply(lambda x: 1 if x in ["CONFIRMED", "CANDIDATE"] else 0)
+    # === 2. Prepare KOI data ===
+    # Target column
+    target_col = "koi_pdisposition"
 
-    # Seleção de features do script de exemplo
+    # Binary target encoding: 1 = Exoplanet, 0 = False Positive
+    koi["label"] = koi[target_col].apply(lambda x: 1 if x in ["CANDIDATE"] else 0)
+
+    # Select relevant numeric features
     features = [
-        "koi_period", "koi_duration", "koi_depth", "koi_impact", 
-        "koi_model_snr", # 'koi_snr' é um alias, 'koi_model_snr' é a coluna principal
+        "koi_period", "koi_duration", "koi_depth", "koi_impact", "koi_num_transits", "koi_max_mult_ev",
         "koi_steff", "koi_slogg", "koi_srad",
-        "koi_prad", "koi_insol"
+        "koi_prad", "koi_dor", "koi_insol"
     ]
 
+    # Keep only available features
     available_features = [f for f in features if f in koi.columns]
-    print(f"Usando {len(available_features)} features: {available_features}")
+    print(f"Using {len(available_features)} features: {available_features}")
 
     data = koi[available_features + ["label"]].copy()
-
-    # Usando SimpleImputer para preencher dados faltantes em vez de dropar
-    imputer = SimpleImputer(strategy='median')
-    data_imputed = pd.DataFrame(imputer.fit_transform(data), columns=data.columns)
-
-    return data_imputed, available_features
-
-# --- 2. Treinamento do Modelo ---
+    data = data.dropna()
+    
+    return data, available_features
 
 def train_random_forest(df, feature_cols):
-    """
-    Treina um classificador RandomForest com os dados processados.
-    """
     X = df[feature_cols]
     y = df["label"]
 
-    # Divisão em treino e teste
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-
-    # Escalonamento dos dados
+    # === 3. Normalize numeric data ===
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    X_scaled = scaler.fit_transform(X)
 
-    # Treinamento do modelo RandomForest
-    print("\nIniciando treinamento do modelo RandomForest...")
+    # === 4. Train/test split ===
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42, stratify=y)
+
+    # === 5. Train a Random Forest model ===
     rf = RandomForestClassifier(
         n_estimators=200,
         random_state=42,
@@ -74,25 +58,23 @@ def train_random_forest(df, feature_cols):
         class_weight="balanced",
         n_jobs=-1
     )
-    rf.fit(X_train_scaled, y_train)
-    print("Treinamento concluído.")
+    rf.fit(X_train, y_train)
 
-    # Avaliação
-    y_pred = rf.predict(X_test_scaled)
-    print("\n=== Relatório de Classificação ===")
-    print(classification_report(y_test, y_pred, target_names=['Falso Positivo', 'Planeta']))
-    
-    # Gerar e salvar o gráfico de importância de features
+    # === 6. Evaluate ===
+    y_pred = rf.predict(X_test)
+    print("\n=== Classification Report ===")
+    print(classification_report(y_test, y_pred))
+
+    # === 7. Feature Importances ===
     importances = rf.feature_importances_
     indices = np.argsort(importances)[::-1]
 
     plt.figure(figsize=(10,6))
-    plt.title("Importância das Features na Classificação (KOI - RandomForest)")
+    plt.title("Feature Importance in Exoplanet Classification (KOI)")
     plt.bar(range(len(importances)), importances[indices], align="center")
     plt.xticks(range(len(importances)), [feature_cols[i] for i in indices], rotation=45, ha="right")
     plt.tight_layout()
-    plt.savefig("./feature_importance_rf.png")
-    print("\nGráfico 'feature_importance_rf.png' salvo.")
+    plt.savefig("./feature_importance_koi.png")
 
     return rf, scaler, feature_cols
 
