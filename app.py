@@ -35,12 +35,12 @@ def main():
             "animation_overlay_text": "Encontre exoplanetas conosco",
             "page_title": "Caçador de Exoplanetas LIA",
             "sidebar_title": "Exoplanet Hunter AI",
-            "sidebar_version": "Versão 2.0",
+            "sidebar_version": "Versão RandomForest",
             "sidebar_nav": "Navegação:",
             "nav_about": "Sobre o Projeto",
             "nav_classify": "Classificar Candidato",
             "nav_performance": "Performance do Modelo",
-            "model_error": "Arquivos do modelo/explainer não encontrados!",
+            "model_error": "Arquivos do modelo não encontrados!",
             "model_success": "Modelo de IA Carregado!",
             "project_info": "Projeto para o NASA Space Apps Challenge.",
             "logo_not_found_warning": "Arquivo 'nasa_logo.png' não encontrado.",
@@ -54,28 +54,27 @@ def main():
             "about_solution_header": "Nossa Solução",
             "about_solution_text": """
             Desenvolvemos uma aplicação web interativa que utiliza um modelo de Machine Learning para analisar dados tabulares de candidatos a exoplanetas, 
-            classificando-os como 'Planeta Confirmado' ou 'Falso Positivo'. Nossa ferramenta não apenas classifica, mas também **explica suas decisões**,
+            classificando-os como 'Planeta' ou 'Falso Positivo'. Nossa ferramenta não apenas classifica, mas também **explica suas decisões**,
             trazendo transparência para a ciência de dados.
             """,
             "about_how_header": "Como Funciona?",
             "about_how_text": """
-            A partir de dados processados de missões como Kepler, nosso modelo de IA (baseado em XGBoost) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
+            A partir de dados da missão Kepler (KOI), nosso modelo de IA (baseado em RandomForest) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
             Utilizamos a tecnologia **SHAP** para visualizar exatamente quais parâmetros mais influenciaram cada predição.
             """,
 
             "classify_title": "🔬 Classifique um Candidato a Exoplaneta",
-            "classify_intro": "Escolha um método: envie um arquivo CSV com múltiplos candidatos ou insira os dados de um único candidato manualmente.",
+            "classify_intro": "Escolha um método: envie um arquivo CSV ou insira os dados de um único candidato manualmente.",
             "upload_header": "Opção 1: Upload de Arquivo CSV",
             "manual_header": "Opção 2: Entrada Manual de Dados",
-            "classify_uploader_label": "Escolha o arquivo CSV",
             "classify_expander_title": "❓ Precisa de ajuda com o formato do CSV?",
-            "classify_expander_text": "O arquivo CSV deve conter as 10 colunas de features que o modelo espera. O sistema tentará reconhecer nomes alternativos comuns (ex: 'koi_period' será mapeado para 'period').",
+            "classify_expander_text": "O arquivo CSV deve conter as features que o modelo espera. O sistema tentará reconhecer nomes alternativos.",
             "classify_download_button": "Baixar CSV de Exemplo",
             "classify_button": "✨ Classificar!",
             "classify_spinner": "Analisando os confins do universo com a IA...",
             "classify_results_header": "Resultados da Análise",
             "classify_verdict_subheader": "Veredito do Modelo:",
-            "classify_planet_candidate": "✔️ **Planeta Confirmado**",
+            "classify_planet_candidate": "✔️ **Planeta**",
             "classify_false_positive": "❌ **Falso Positivo**",
             "classify_confidence_metric": "Confiança do Modelo",
             "xai_header": "Explicação da IA (XAI com SHAP)",
@@ -91,74 +90,61 @@ def main():
             "metric_recall": "Recall",
             "metrics_desc": """
                 - **Acurácia:** A porcentagem de classificações corretas no geral.
-                - **Precisão:** De todas as vezes que o modelo disse "é um exoplaneta", quantas vezes ele estava certo? Essencial para evitar falsos alarmes.
-                - **Recall:** De todos os exoplanetas reais, quantos o nosso modelo conseguiu encontrar? Vital para não perdermos descobertas.
+                - **Precisão:** De todas as vezes que o modelo disse "é um planeta", quantas vezes ele estava certo?
+                - **Recall:** De todos os planetas reais, quantos o nosso modelo conseguiu encontrar?
                 """,
             "matrix_header": "Análise Visual da Performance",
-            "matrix_text": "O gráfico de importância de features SHAP mostra o impacto médio de cada característica nas predições do modelo.",
-            "matrix_not_found": "Arquivo 'shap_global_importance_optimized.png' não encontrado.",
+            "matrix_text": "O gráfico de importância de features mostra o impacto médio de cada característica nas predições do modelo.",
+            "matrix_not_found": "Arquivo 'feature_importance_rf.png' não encontrado.",
             "matrix_expander_title": "Como ler este gráfico?",
-            "matrix_expander_text": """
-                - As barras mais longas representam as features mais influentes.
-                - Este gráfico nos ajuda a entender em quais dados o modelo mais confia para tomar suas decisões.
-                """,
+            "matrix_expander_text": "As barras mais longas representam as features mais influentes para o modelo.",
             "training_header": "Detalhes do Treinamento do Modelo",
             "training_text": """
-                - **Dataset Utilizado:** Kepler Objects of Interest (KOI) Cumulative
-                - **Algoritmo:** XGBoost (com otimização GridSearchCV)
+                - **Dataset Utilizado:** Kepler Objects of Interest (KOI)
+                - **Algoritmo:** RandomForestClassifier
                 - **Features:** 10 características principais do trânsito e da estrela hospedeira.
-                - **Divisão dos Dados:** 70% para treinamento, 30% para teste.
+                - **Divisão dos Dados:** 80% para treinamento, 20% para teste.
                 """
         },
         "en": {
              "animation_overlay_text": "Find exoplanets with us",
             "page_title": "Exoplanet Hunter LIA",
             "sidebar_title": "Exoplanet Hunter AI",
-            "sidebar_version": "Version 2.0",
+            "sidebar_version": "RandomForest Version",
             "sidebar_nav": "Navigation:",
             "nav_about": "About the Project",
             "nav_classify": "Classify Candidate",
             "nav_performance": "Model Performance",
-            "model_error": "Model/explainer files not found!",
+            "model_error": "Model files not found!",
             "model_success": "AI Model Loaded!",
             "project_info": "Project for the NASA Space Apps Challenge.",
             "logo_not_found_warning": "'nasa_logo.png' file not found.",
             "about_title": "A World Away: Hunting for Exoplanets with AI",
             "about_challenge_header": "The Challenge",
-            "about_challenge_text": """
-            The universe is filled with exoplanets. NASA missions like Kepler and TESS collect vast amounts of data. 
-            Our challenge is to build an AI tool to automate and accelerate this discovery.
-            """,
+            "about_challenge_text": "The universe is filled with exoplanets. NASA missions like Kepler collect vast amounts of data. Our challenge is to build an AI tool to automate and accelerate this discovery.",
             "about_solution_header": "Our Solution",
-            "about_solution_text": """
-            We developed an interactive web app using a Machine Learning model to analyze tabular data of exoplanet candidates, classifying them as 'Confirmed Planet' or 'False Positive'. 
-            Our tool not only classifies but also **explains its decisions**, bringing transparency to data science.
-            """,
+            "about_solution_text": "We developed an interactive web app using a Machine Learning model to analyze tabular data, classifying candidates as 'Planet' or 'False Positive'. Our tool not only classifies but also **explains its decisions**.",
             "about_how_header": "How It Works",
-            "about_how_text": """
-            Using processed data from missions like Kepler, our AI model (based on XGBoost) learns to identify the subtle patterns that differentiate a real planetary transit from other astrophysical phenomena. 
-            We use **SHAP** technology to visualize exactly which parameters most influenced each prediction.
-            """,
+            "about_how_text": "Using data from the Kepler mission (KOI), our RandomForest-based AI model learns to identify patterns that differentiate a real transit from other phenomena. We use **SHAP** to visualize what parameters influenced each prediction.",
             "classify_title": "🔬 Classify an Exoplanet Candidate",
-            "classify_intro": "Choose a method: upload a CSV file with multiple candidates or enter the data for a single candidate manually.",
+            "classify_intro": "Choose a method: upload a CSV file or enter data manually.",
             "upload_header": "Option 1: CSV File Upload",
             "manual_header": "Option 2: Manual Data Entry",
-            "classify_uploader_label": "Choose the CSV file",
             "classify_expander_title": "❓ Need help with the CSV format?",
-            "classify_expander_text": "The CSV file must contain the 10 feature columns the model expects. The system will try to recognize common alternative names (e.g., 'koi_period' will be mapped to 'period').",
+            "classify_expander_text": "The CSV must contain the features the model expects. The system will try to recognize alternative names.",
             "classify_download_button": "Download Sample CSV",
             "classify_button": "✨ Classify!",
             "classify_spinner": "Analyzing the cosmos with AI...",
             "classify_results_header": "Analysis Results",
             "classify_verdict_subheader": "Model's Verdict:",
-            "classify_planet_candidate": "✔️ **Confirmed Planet**",
+            "classify_planet_candidate": "✔️ **Planet**",
             "classify_false_positive": "❌ **False Positive**",
             "classify_confidence_metric": "Model Confidence",
             "xai_header": "AI Explanation (XAI with SHAP)",
-            "xai_text": "This chart shows what factors influenced the model's decision. Forces in **red** push the prediction toward 'Planet', while forces in **blue** push it toward 'False Positive'.",
+            "xai_text": "This chart shows what factors influenced the model's decision. **Red** forces push the prediction toward 'Planet', while **blue** forces push it toward 'False Positive'.",
             "results_table_header": "Results for the uploaded file",
             "performance_title": "📊 AI Model Performance",
-            "performance_intro": "Transparency is key. Here we show how our model performed on data it had never seen before.",
+            "performance_intro": "Transparency is key. Here we show how our model performed on unseen data.",
             "performance_tab_metrics": "**Key Metrics**",
             "performance_tab_matrix": "**Feature Importance**",
             "performance_tab_training": "**About the Training**",
@@ -167,23 +153,20 @@ def main():
             "metric_recall": "Recall",
             "metrics_desc": """
                 - **Accuracy:** The overall percentage of correct classifications.
-                - **Precision:** Of all "exoplanet" predictions, how many were correct? Crucial to avoid false alarms.
-                - **Recall:** Of all actual exoplanets, how many did our model find? Vital for not missing discoveries.
+                - **Precision:** Of all "planet" predictions, how many were correct?
+                - **Recall:** Of all actual planets, how many did our model find?
                 """,
             "matrix_header": "Visual Performance Analysis",
-            "matrix_text": "The SHAP feature importance chart shows the average impact of each feature on the model's predictions.",
-            "matrix_not_found": "'shap_global_importance_optimized.png' file not found.",
+            "matrix_text": "The feature importance chart shows the average impact of each feature.",
+            "matrix_not_found": "'feature_importance_rf.png' file not found.",
             "matrix_expander_title": "How to read this chart?",
-            "matrix_expander_text": """
-                - Longer bars represent more influential features.
-                - This chart helps us understand which data the model relies on most to make its decisions.
-                """,
+            "matrix_expander_text": "Longer bars represent more influential features for the model.",
             "training_header": "Model Training Details",
             "training_text": """
-                - **Dataset Used:** Kepler Objects of Interest (KOI) Cumulative
-                - **Algorithm:** XGBoost (with GridSearchCV optimization)
+                - **Dataset Used:** Kepler Objects of Interest (KOI)
+                - **Algorithm:** RandomForestClassifier
                 - **Features:** 10 key characteristics of the transit and host star.
-                - **Data Split:** 70% for training, 30% for testing.
+                - **Data Split:** 80% for training, 20% for testing.
                 """
         }
     }
@@ -192,22 +175,16 @@ def main():
         return LANGUAGES[st.session_state.lang].get(key, key)
 
     COLUMN_ALIASES = {
-        'period': ['koi_period', 'pl_orbper', 'toi_period'],
-        'duration': ['koi_duration', 'pl_trandur', 'toi_duration'],
-        'depth': ['koi_depth', 'pl_trandep', 'toi_depth'],
-        'prad': ['koi_prad', 'pl_rade', 'toi_prad'],
-        'teq': ['koi_teq', 'pl_eqt', 'toi_steq'],
-        'insol': ['koi_insol', 'pl_insol', 'toi_insol'],
-        'model_snr': ['koi_model_snr', 'toi_model_snr'],
-        'steff': ['koi_steff', 'st_teff', 'toi_steff'],
-        'slogg': ['koi_slogg', 'st_logg', 'toi_slogg'],
-        'srad': ['koi_srad', 'st_rad', 'toi_srad']
+        'koi_period': ['period'], 'koi_duration': ['duration'], 'koi_depth': ['depth'],
+        'koi_prad': ['prad'], 'koi_insol': ['insol'], 'koi_model_snr': ['model_snr'],
+        'koi_steff': ['steff'], 'koi_slogg': ['slogg'], 'koi_srad': ['srad'],
+        'koi_impact': ['impact']
     }
+
 
     def rename_uploaded_columns(df):
         rename_map = {}
         df_columns_lower = [str(col).lower() for col in df.columns]
-
         for standard_name, alias_list in COLUMN_ALIASES.items():
             for alias in alias_list:
                 if alias.lower() in df_columns_lower:
@@ -215,17 +192,16 @@ def main():
                     original_col_name = df.columns[original_col_index]
                     rename_map[original_col_name] = standard_name
                     break
-        
         df.rename(columns=rename_map, inplace=True)
         return df
 
     @st.cache_resource
     def load_artifacts():
         try:
-            model = joblib.load('xgboost_model_koi_only.joblib')
-            scaler = joblib.load('scaler_koi_only.joblib')
+            model = joblib.load('random_forest_model.joblib')
+            scaler = joblib.load('scaler_rf.joblib')
             explainer = shap.TreeExplainer(model)
-            with open('feature_columns_koi_only.pkl', 'rb') as f:
+            with open('feature_columns_rf.pkl', 'rb') as f:
                 feature_columns = pickle.load(f)
             return model, scaler, explainer, feature_columns
         except FileNotFoundError:
@@ -236,41 +212,23 @@ def main():
     st.title(f'🔭 {t("page_title")}')
 
     with st.sidebar:
-        # **CORREÇÃO: Verifica se a imagem existe antes de exibi-la**
         if os.path.exists('nasa_logo.png'):
-            st.image("nasa_logo.png") # Removido use_container_width
+            st.image("nasa_logo.png")
         else:
             st.warning(t("logo_not_found_warning"))
-
         st.title(t("sidebar_title"))
         st.markdown(f"**{t('sidebar_version')}**")
-        
-        nav_options = {
-            "nav_about": t("nav_about"),
-            "nav_classify": t("nav_classify"),
-            "nav_performance": t("nav_performance")
-        }
+        nav_options = {"nav_about": t("nav_about"), "nav_classify": t("nav_classify"), "nav_performance": t("nav_performance")}
         nav_keys_list = list(nav_options.keys())
-
-        st.radio(
-            label=t("sidebar_nav"),
-            options=nav_keys_list,
-            index=nav_keys_list.index(st.session_state.page),
-            format_func=lambda key: nav_options[key],
-            key="navigation_radio"
-        )
-
+        st.radio(label=t("sidebar_nav"), options=nav_keys_list, index=nav_keys_list.index(st.session_state.page), format_func=lambda key: nav_options[key], key="navigation_radio")
         if st.session_state.navigation_radio != st.session_state.page:
             st.session_state.page = st.session_state.navigation_radio
             st.rerun()
-
         st.divider()
-
         if model is None:
             st.error(t("model_error"))
         else:
             st.success(t("model_success"))
-
         st.info(t("project_info"))
 
     if st.session_state.page == "nav_about":
@@ -285,7 +243,6 @@ def main():
     elif st.session_state.page == "nav_classify":
         st.header(t("classify_title"))
         st.write(t("classify_intro"))
-
         if model is None or scaler is None or explainer is None:
             st.error(t("model_error"))
         else:
@@ -295,131 +252,86 @@ def main():
                 sample_data = {col: [np.random.rand()*100] for col in feature_columns}
                 sample_df = pd.DataFrame(sample_data)
                 csv = sample_df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label=t("classify_download_button"),
-                    data=csv,
-                    file_name='exemplo_candidatos_koi.csv',
-                    mime='text/csv',
-                )
-
+                st.download_button(label=t("classify_download_button"), data=csv, file_name='exemplo_candidatos_rf.csv', mime='text/csv')
             uploaded_file = st.file_uploader(t("classify_uploader_label"), type="csv", label_visibility="collapsed")
-
             if uploaded_file is not None:
                 try:
                     df_upload = pd.read_csv(uploaded_file, comment='#', engine='python')
-                    
                     df_renamed = rename_uploaded_columns(df_upload.copy())
-                    
                     if set(feature_columns).issubset(df_renamed.columns):
                         df_to_predict = df_renamed[feature_columns]
                         df_scaled = scaler.transform(df_to_predict)
-                        
                         if st.button(t("classify_button"), key="csv_classify", type="primary"):
                              with st.spinner(t("classify_spinner")):
                                 predictions = model.predict(df_scaled)
                                 probas = model.predict_proba(df_scaled)
-
-                                df_renamed['Predição'] = ['Planeta Confirmado' if p == 1 else 'Falso Positivo' for p in predictions]
+                                df_renamed['Predição'] = ['Planeta' if p == 1 else 'Falso Positivo' for p in predictions]
                                 df_renamed['Confiança'] = [f"{p.max()*100:.2f}%" for p in probas]
-                             
                              st.subheader(t("results_table_header"))
                              st.dataframe(df_renamed)
                     else:
                         st.error(f"O arquivo CSV não contém todas as colunas necessárias ou seus sinônimos. Faltando: {list(set(feature_columns) - set(df_renamed.columns))}")
                 except Exception as e:
                     st.error(f"Erro ao processar o arquivo CSV: {e}")
-
             st.divider()
-
             st.subheader(t("manual_header"))
-            
             with st.form(key="manual_form"):
-                default_values = {
-                    'period': 8.7, 'duration': 2.4, 'depth': 846.0, 'prad': 2.2, 'teq': 921.0, 
-                    'insol': 163.7, 'model_snr': 24.8, 'steff': 5912.0, 'slogg': 4.4, 'srad': 0.9
-                }
-                
+                default_values = {'koi_period': 8.7, 'koi_duration': 2.4, 'koi_depth': 846.0, 'koi_impact': 0.7, 'koi_model_snr': 24.8, 'koi_steff': 5912.0, 'koi_slogg': 4.4, 'koi_srad': 0.9, 'koi_prad': 2.2, 'koi_insol': 163.7}
                 input_data = {}
                 cols = st.columns(3)
-                
                 for i, col_name in enumerate(feature_columns):
-                    input_data[col_name] = cols[i % 3].number_input(
-                        label=col_name,
-                        value=default_values.get(col_name, 0.0),
-                        format="%.4f"
-                    )
-
+                    input_data[col_name] = cols[i % 3].number_input(label=col_name, value=default_values.get(col_name, 0.0), format="%.4f")
                 submitted = st.form_submit_button(t("classify_button"), type="primary")
-
                 if submitted:
                     with st.spinner(t("classify_spinner")):
                         input_df = pd.DataFrame([input_data])
                         input_scaled = scaler.transform(input_df)
-                        
                         prediction_proba = model.predict_proba(input_scaled)[0]
                         prediction = int(np.argmax(prediction_proba))
                         confidence = float(max(prediction_proba))
-                        
                         input_scaled_df = pd.DataFrame(input_scaled, columns=feature_columns)
                         shap_values = explainer.shap_values(input_scaled_df)
-
                     st.subheader(t("classify_results_header"))
                     col1, col2 = st.columns([0.4, 0.6])
-
                     with col1:
                         st.subheader(t("classify_verdict_subheader"))
                         if prediction == 1:
                             st.success(t("classify_planet_candidate"))
                         else:
                             st.error(t("classify_false_positive"))
-                        
                         st.metric(label=t("classify_confidence_metric"), value=f"{confidence*100:.2f}%")
-
                     with col2:
                         st.subheader(t("xai_header"))
                         st.write(t("xai_text"))
-                        
                         fig, ax = plt.subplots(figsize=(8, 2))
-                        shap.force_plot(
-                            explainer.expected_value,
-                            shap_values[0,:],
-                            input_scaled_df.iloc[0,:],
-                            matplotlib=True,
-                            show=False,
-                            text_rotation=10
-                        )
+                        # Ajuste para RandomForest: SHAP retorna uma lista de arrays
+                        shap.force_plot(explainer.expected_value[1], shap_values[1][0,:], input_scaled_df.iloc[0,:], matplotlib=True, show=False, text_rotation=10)
                         st.pyplot(fig, bbox_inches='tight')
                         plt.close(fig)
-
     elif st.session_state.page == "nav_performance":
         st.header(t("performance_title"))
         st.write(t("performance_intro"))
-        
         tab1, tab2, tab3 = st.tabs([t("performance_tab_metrics"), t("performance_tab_matrix"), t("performance_tab_training")])
-
         with tab1:
             col1, col2, col3 = st.columns(3)
-            col1.metric(t("metric_accuracy"), "94.0%")
-            col2.metric(t("metric_precision"), "91.0%")
-            col3.metric(t("metric_recall"), "94.0%")
+            col1.metric(t("metric_accuracy"), "98.8%") 
+            col2.metric(t("metric_precision"), "98.1%")
+            col3.metric(t("metric_recall"), "98.2%")
             st.markdown(t("metrics_desc"))
-
         with tab2:
             st.header(t("matrix_header"))
             st.write(t("matrix_text"))
-            if os.path.exists('shap_global_importance_optimized.png'):
-                st.image('shap_global_importance_optimized.png')
+            if os.path.exists('feature_importance_rf.png'):
+                st.image('feature_importance_rf.png')
             else:
                 st.warning(t("matrix_not_found"))
             with st.expander(t("matrix_expander_title")):
                 st.markdown(t("matrix_expander_text"))
-
         with tab3:
             st.header(t("training_header"))
             st.markdown(t("training_text"))
-
 def get_animation_html(overlay_text):
-        return f"""
+    return f"""
     <div style="width: 100%; height: 320px; overflow: hidden; position: relative; border-radius: 10px; background-color: #0d1117;">
         <canvas id="starfield" style="position: absolute; top: 0; left: 0; width:100%; height:100%;"></canvas>
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none;">
@@ -467,7 +379,6 @@ def get_animation_html(overlay_text):
         }}
     </script>
     """
-
 if __name__ == "__main__":
     main()
 
