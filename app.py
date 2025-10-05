@@ -21,19 +21,17 @@ def main():
 
     # --- Inicialização do Estado da Sessão ---
     if 'lang' not in st.session_state:
-        st.session_state.lang = 'pt' # Padrão para português
+        st.session_state.lang = 'pt'
     if 'page' not in st.session_state:
         st.session_state.page = "nav_about"
 
-    # **CORREÇÃO: Trava de segurança para o estado da página para evitar o ValueError**
     valid_pages = ["nav_about", "nav_classify", "nav_performance"]
     if st.session_state.page not in valid_pages:
-        st.session_state.page = "nav_about" # Reinicia para o padrão se o estado for inválido
+        st.session_state.page = "nav_about"
 
     # --- Dicionário de Idiomas (i18n) ---
     LANGUAGES = {
         "pt": {
-            # ... (Traduções da página 'Sobre' e 'Performance' mantidas)
             "animation_overlay_text": "Encontre exoplanetas conosco",
             "page_title": "Caçador de Exoplanetas LIA",
             "sidebar_title": "Exoplanet Hunter AI",
@@ -45,13 +43,12 @@ def main():
             "model_error": "Arquivos do modelo/explainer não encontrados!",
             "model_success": "Modelo de IA Carregado!",
             "project_info": "Projeto para o NASA Space Apps Challenge.",
-
+            "logo_not_found_warning": "Arquivo 'nasa_logo.png' não encontrado.",
             "about_title": "A World Away: Caçando Exoplanetas com Inteligência Artificial",
             "about_challenge_header": "O Desafio",
             "about_challenge_text": """
             O universo está repleto de planetas fora do nosso sistema solar — os exoplanetas. 
             Missões da NASA como Kepler e TESS coletam uma quantidade imensa de dados.
-            No entanto, identificar a minúscula queda de brilho causada por um planeta em trânsito é como encontrar uma agulha num palheiro cósmico. 
             O nosso desafio é construir uma ferramenta de IA para automatizar e acelerar essa incrível descoberta.
             """,
             "about_solution_header": "Nossa Solução",
@@ -62,8 +59,8 @@ def main():
             """,
             "about_how_header": "Como Funciona?",
             "about_how_text": """
-            A partir de dados processados de missões como Kepler e TESS, nosso modelo de IA (baseado em XGBoost) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
-            Utilizamos a tecnologia **SHAP** para visualizar exatamente quais parâmetros (como período orbital, profundidade do trânsito e características da estrela) mais influenciaram cada predição.
+            A partir de dados processados de missões como Kepler, nosso modelo de IA (baseado em XGBoost) aprende a identificar os padrões sutis que diferenciam um trânsito planetário real de outros fenômenos astrofísicos. 
+            Utilizamos a tecnologia **SHAP** para visualizar exatamente quais parâmetros mais influenciaram cada predição.
             """,
 
             "classify_title": "🔬 Classifique um Candidato a Exoplaneta",
@@ -87,7 +84,7 @@ def main():
             "performance_title": "📊 Performance do Modelo de IA",
             "performance_intro": "A transparência é fundamental. Aqui mostramos como nosso modelo se saiu em dados que ele nunca havia visto antes.",
             "performance_tab_metrics": "**Métricas Principais**",
-            "performance_tab_matrix": "**Matriz de Confusão**",
+            "performance_tab_matrix": "**Importância das Features**",
             "performance_tab_training": "**Sobre o Treinamento**",
             "metric_accuracy": "Acurácia Geral",
             "metric_precision": "Precisão",
@@ -98,14 +95,12 @@ def main():
                 - **Recall:** De todos os exoplanetas reais, quantos o nosso modelo conseguiu encontrar? Vital para não perdermos descobertas.
                 """,
             "matrix_header": "Análise Visual da Performance",
-            "matrix_text": "A matriz de confusão é a melhor ferramenta para visualizar os acertos e erros do modelo.",
+            "matrix_text": "O gráfico de importância de features SHAP mostra o impacto médio de cada característica nas predições do modelo.",
             "matrix_not_found": "Arquivo 'shap_global_importance_optimized.png' não encontrado.",
             "matrix_expander_title": "Como ler este gráfico?",
             "matrix_expander_text": """
-                - **Verdadeiro Positivo:** O modelo acertou "Planeta". **(Sucesso!)**
-                - **Verdadeiro Negativo:** O modelo acertou "Não é Planeta". **(Sucesso!)**
-                - **Falso Positivo:** O modelo errou, dizendo "Planeta".
-                - **Falso Negativo:** O modelo errou, dizendo "Não é Planeta". (O pior erro!)
+                - As barras mais longas representam as features mais influentes.
+                - Este gráfico nos ajuda a entender em quais dados o modelo mais confia para tomar suas decisões.
                 """,
             "training_header": "Detalhes do Treinamento do Modelo",
             "training_text": """
@@ -127,11 +122,11 @@ def main():
             "model_error": "Model/explainer files not found!",
             "model_success": "AI Model Loaded!",
             "project_info": "Project for the NASA Space Apps Challenge.",
+            "logo_not_found_warning": "'nasa_logo.png' file not found.",
             "about_title": "A World Away: Hunting for Exoplanets with AI",
             "about_challenge_header": "The Challenge",
             "about_challenge_text": """
             The universe is filled with exoplanets. NASA missions like Kepler and TESS collect vast amounts of data. 
-            However, identifying the tiny dip in brightness from a transit is like finding a needle in a cosmic haystack. 
             Our challenge is to build an AI tool to automate and accelerate this discovery.
             """,
             "about_solution_header": "Our Solution",
@@ -142,7 +137,7 @@ def main():
             "about_how_header": "How It Works",
             "about_how_text": """
             Using processed data from missions like Kepler, our AI model (based on XGBoost) learns to identify the subtle patterns that differentiate a real planetary transit from other astrophysical phenomena. 
-            We use **SHAP** technology to visualize exactly which parameters (like orbital period, transit depth, and stellar characteristics) most influenced each prediction.
+            We use **SHAP** technology to visualize exactly which parameters most influenced each prediction.
             """,
             "classify_title": "🔬 Classify an Exoplanet Candidate",
             "classify_intro": "Choose a method: upload a CSV file with multiple candidates or enter the data for a single candidate manually.",
@@ -165,7 +160,7 @@ def main():
             "performance_title": "📊 AI Model Performance",
             "performance_intro": "Transparency is key. Here we show how our model performed on data it had never seen before.",
             "performance_tab_metrics": "**Key Metrics**",
-            "performance_tab_matrix": "**Confusion Matrix**",
+            "performance_tab_matrix": "**Feature Importance**",
             "performance_tab_training": "**About the Training**",
             "metric_accuracy": "Overall Accuracy",
             "metric_precision": "Precision",
@@ -176,14 +171,12 @@ def main():
                 - **Recall:** Of all actual exoplanets, how many did our model find? Vital for not missing discoveries.
                 """,
             "matrix_header": "Visual Performance Analysis",
-            "matrix_text": "The confusion matrix is the best tool to visualize the model's hits and misses.",
+            "matrix_text": "The SHAP feature importance chart shows the average impact of each feature on the model's predictions.",
             "matrix_not_found": "'shap_global_importance_optimized.png' file not found.",
             "matrix_expander_title": "How to read this chart?",
             "matrix_expander_text": """
-                - **True Positive:** Correctly guessed "Planet". **(Success!)**
-                - **True Negative:** Correctly guessed "Not a Planet". **(Success!)**
-                - **False Positive:** Incorrectly guessed "Planet".
-                - **False Negative:** Incorrectly guessed "Not a Planet". (The worst error!)
+                - Longer bars represent more influential features.
+                - This chart helps us understand which data the model relies on most to make its decisions.
                 """,
             "training_header": "Model Training Details",
             "training_text": """
@@ -231,8 +224,7 @@ def main():
         try:
             model = joblib.load('xgboost_model_koi_only.joblib')
             scaler = joblib.load('scaler_koi_only.joblib')
-            with open('shap_explainer_koi_only.pkl', 'rb') as f:
-                explainer = pickle.load(f)
+            explainer = shap.TreeExplainer(model)
             with open('feature_columns_koi_only.pkl', 'rb') as f:
                 feature_columns = pickle.load(f)
             return model, scaler, explainer, feature_columns
@@ -244,9 +236,12 @@ def main():
     st.title(f'🔭 {t("page_title")}')
 
     with st.sidebar:
+        # **CORREÇÃO: Verifica se a imagem existe antes de exibi-la**
         if os.path.exists('nasa_logo.png'):
-            st.image("nasa_logo.png", use_container_width=True)
-        
+            st.image("nasa_logo.png") # Removido use_container_width
+        else:
+            st.warning(t("logo_not_found_warning"))
+
         st.title(t("sidebar_title"))
         st.markdown(f"**{t('sidebar_version')}**")
         
@@ -291,7 +286,7 @@ def main():
         st.header(t("classify_title"))
         st.write(t("classify_intro"))
 
-        if model is None or scaler is None:
+        if model is None or scaler is None or explainer is None:
             st.error(t("model_error"))
         else:
             st.subheader(t("upload_header"))
@@ -319,7 +314,7 @@ def main():
                         df_to_predict = df_renamed[feature_columns]
                         df_scaled = scaler.transform(df_to_predict)
                         
-                        if st.button(t("classify_button"), key="csv_classify", type="primary", use_container_width=True):
+                        if st.button(t("classify_button"), key="csv_classify", type="primary"):
                              with st.spinner(t("classify_spinner")):
                                 predictions = model.predict(df_scaled)
                                 probas = model.predict_proba(df_scaled)
@@ -354,7 +349,7 @@ def main():
                         format="%.4f"
                     )
 
-                submitted = st.form_submit_button(t("classify_button"), type="primary", use_container_width=True)
+                submitted = st.form_submit_button(t("classify_button"), type="primary")
 
                 if submitted:
                     with st.spinner(t("classify_spinner")):
@@ -413,7 +408,7 @@ def main():
             st.header(t("matrix_header"))
             st.write(t("matrix_text"))
             if os.path.exists('shap_global_importance_optimized.png'):
-                st.image('shap_global_importance_optimized.png', use_container_width=True)
+                st.image('shap_global_importance_optimized.png')
             else:
                 st.warning(t("matrix_not_found"))
             with st.expander(t("matrix_expander_title")):
