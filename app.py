@@ -395,9 +395,9 @@ def main():
         tab1, tab2, tab3 = st.tabs([t("performance_tab_metrics"), t("performance_tab_matrix"), t("performance_tab_training")])
         with tab1:
             col1, col2, col3 = st.columns(3)
-            col1.metric(t("metric_accuracy"), "85.0%") 
-            col2.metric(t("metric_precision"), "85.0%")
-            col3.metric(t("metric_recall"), "85.0%")
+            col1.metric(t("metric_accuracy"), "86.0%") 
+            col2.metric(t("metric_precision"), "86.0%")
+            col3.metric(t("metric_recall"), "86.0%")
             st.markdown(t("metrics_desc"))
         with tab2:
             st.header(t("matrix_header"))
